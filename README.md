@@ -5,6 +5,8 @@ It can also display items found on a specific seed.
 
 # How to use
 
+Download a precompiled .jar from the releases tab or build your own using the instructions below.
+
 ## Seed display mode
 
 If no more than two arguments are provided, the items found in a given seed will be printed on the screen:

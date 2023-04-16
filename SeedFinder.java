@@ -47,6 +47,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
+import com.watabou.utils.Random;
 
 public class SeedFinder {
 	enum Condition {ANY, ALL};
@@ -172,10 +173,12 @@ public class SeedFinder {
 			e.printStackTrace();
 		}
 
-		for (int i = 0; i < DungeonSeed.TOTAL_SEEDS; i++) {
-			if (testSeed(Integer.toString(i), Options.floors)) {
+
+		String seedDigits = Integer.toString(Random.Int(500000));
+		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
+			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
 				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
-				logSeedItems(Integer.toString(i), Options.floors);
+				logSeedItems(seedDigits + Integer.toString(i), Options.floors);
 			}
 		}
 	}
