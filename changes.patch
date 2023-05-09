@@ -1,6 +1,11 @@
+From 708d899c86732253c1ea10408e550a4e0c141eb9 Mon Sep 17 00:00:00 2001
+From: Timon Lilje <timon.lilje@gmail.com>
+Date: Mon, 8 May 2023 12:02:28 +0200
+Subject: [PATCH] seedfinder CLI
+
 ---
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 382 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 385 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -8,11 +13,11 @@
  .../shatteredpixeldungeon/items/Heap.java     |  14 +-
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 9 files changed, 404 insertions(+), 19 deletions(-)
+ 9 files changed, 407 insertions(+), 19 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
-index 5deeeab25..69a889175 100644
+index a252c1317..cbafe502d 100644
 --- a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
 +++ b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
 @@ -61,7 +61,7 @@ public class DeviceCompat {
@@ -26,10 +31,10 @@ index 5deeeab25..69a889175 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..a15fe8f47
+index 000000000..0cd6626b0
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,382 @@
+@@ -0,0 +1,385 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -52,18 +57,18 @@ index 000000000..a15fe8f47
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GoldenMimic;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
-+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
++import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
++import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
++import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 +import com.shatteredpixel.shatteredpixeldungeon.items.EnergyCrystal;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Heap.Type;
-+import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
-+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
++import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 +import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 +import com.shatteredpixel.shatteredpixeldungeon.items.keys.GoldenKey;
 +import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
@@ -75,10 +80,11 @@ index 000000000..a15fe8f47
 +import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 +import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 +import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
-+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 +import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
++import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 +import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 +import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
++import com.watabou.utils.Random;
 +
 +public class SeedFinder {
 +	enum Condition {ANY, ALL};
@@ -204,10 +210,12 @@ index 000000000..a15fe8f47
 +			e.printStackTrace();
 +		}
 +
-+		for (int i = 0; i < DungeonSeed.TOTAL_SEEDS; i++) {
-+			if (testSeed(Integer.toString(i), Options.floors)) {
++
++		String seedDigits = Integer.toString(Random.Int(500000));
++		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
++			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
 +				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
-+				logSeedItems(Integer.toString(i), Options.floors);
++				logSeedItems(seedDigits + Integer.toString(i), Options.floors);
 +			}
 +		}
 +	}
@@ -413,10 +421,10 @@ index 000000000..a15fe8f47
 +
 +}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
-index 3568af8b4..ac3a56a3a 100644
+index 9fd96986c..170b3109d 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
-@@ -97,17 +97,8 @@ public class ShatteredPixelDungeon extends Game {
+@@ -67,17 +67,8 @@ public class ShatteredPixelDungeon extends Game {
  	@Override
  	public void create() {
  		super.create();
@@ -436,7 +444,7 @@ index 3568af8b4..ac3a56a3a 100644
  
  	@Override
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
-index 8c2683a8a..96e7c1b37 100644
+index 0445e3684..cdbee598d 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
 @@ -41,7 +41,7 @@ public class ArmoredStatue extends Statue {
@@ -449,7 +457,7 @@ index 8c2683a8a..96e7c1b37 100644
  	public ArmoredStatue(){
  		super();
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
-index db91b0654..8992eaaae 100644
+index f76bab815..3962f5d93 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
 @@ -47,7 +47,7 @@ public class Statue extends Mob {
@@ -462,10 +470,10 @@ index db91b0654..8992eaaae 100644
  	public boolean levelGenStatue = true;
  	
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
-index 740aa90b0..f3023f6b0 100644
+index f3799821a..471d782df 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
-@@ -201,7 +201,7 @@ public class Wandmaker extends NPC {
+@@ -206,7 +206,7 @@ public class Wandmaker extends NPC {
  	
  	public static class Quest {
  
@@ -475,10 +483,10 @@ index 740aa90b0..f3023f6b0 100644
  		// 2 = elemental embers quest
  		// 3 = rotberry quest
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
-index 5a3730dba..d184f3fdc 100644
+index a75202304..6c50324e5 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
-@@ -65,7 +65,11 @@ public class Heap implements Bundlable {
+@@ -67,7 +67,11 @@ public class Heap implements Bundlable {
  		CRYSTAL_CHEST,
  		TOMB,
  		SKELETON,
@@ -491,7 +499,7 @@ index 5a3730dba..d184f3fdc 100644
  	}
  	public Type type = Type.HEAP;
  	
-@@ -369,6 +373,14 @@ public class Heap implements Bundlable {
+@@ -378,6 +382,14 @@ public class Heap implements Bundlable {
  				return Messages.get(this, "skeleton");
  			case REMAINS:
  				return Messages.get(this, "remains");
@@ -507,10 +515,10 @@ index 5a3730dba..d184f3fdc 100644
  				return peek().title();
  		}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
-index 5f3c81211..0a4eeb7fe 100644
+index 53cea8f89..ddab91583 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
-@@ -96,10 +96,6 @@ public enum Languages {
+@@ -97,10 +97,6 @@ public enum Languages {
  	}
  
  	public static Languages matchCode(String code){
@@ -522,7 +530,7 @@ index 5f3c81211..0a4eeb7fe 100644
  	}
  
 diff --git a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
-index d4d20997a..c95b7ca82 100644
+index a30446fb6..81d6aa127 100644
 --- a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 +++ b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 @@ -32,6 +32,7 @@ import com.badlogic.gdx.files.FileHandle;
@@ -533,7 +541,7 @@ index d4d20997a..c95b7ca82 100644
  import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
  import com.shatteredpixel.shatteredpixeldungeon.services.news.News;
  import com.shatteredpixel.shatteredpixeldungeon.services.news.NewsImpl;
-@@ -196,6 +197,9 @@ public class DesktopLauncher {
+@@ -186,6 +187,9 @@ public class DesktopLauncher {
  		config.setWindowIcon("icons/icon_16.png", "icons/icon_32.png", "icons/icon_48.png",
  				"icons/icon_64.png", "icons/icon_128.png", "icons/icon_256.png");
  
@@ -543,3 +551,6 @@ index d4d20997a..c95b7ca82 100644
 +		new SeedFinder(args);
  	}
  }
+-- 
+2.33.0.windows.2
+
