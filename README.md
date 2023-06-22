@@ -39,6 +39,15 @@ The application will run until all the seeds have been tested by default (virtua
 
 Any valid seeds will be printed during the execution in the 9 letter code and numeric format.
 
+## Multithreading
+
+The nodejs script can be used to start and control multiple seedfinders simultaneously. In order to use the script [nodejs](https://nodejs.org/en) must be installed. No NPM packages are required.
+
+Syntax: ` node . <floor> <mode> <seed item file> <threads to spare (optional)> `
+
+This will start a number of seedfinders equal to the thread count of your processor minus the "threads to spare" count. If no threadsToSpare is provided, a default number of 4 threads is preserved.
+By default "seed-finder-random.jar" is the targeted seedfinder. This can be changed by editing the script, but there would be no point using it to run the sequential version.
+
 # How to build
 
 1. Clone the [Shattered Pixel Dungeon](https://github.com/00-Evan/shattered-pixel-dungeon) repository.
