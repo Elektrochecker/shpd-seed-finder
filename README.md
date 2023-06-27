@@ -43,9 +43,9 @@ Any valid seeds will be printed during the execution in the 9 letter code and nu
 
 The nodejs script can be used to start and control multiple seedfinders simultaneously. In order to use the script [nodejs](https://nodejs.org/en) must be installed. No NPM packages are required.
 
-Syntax: ` node . <floor> <mode> <seed item file> <threads to spare (optional)> `
+Syntax: ` node . <floor> <mode> <seed item file> <number of processes (optional)> `
 
-This will start a number of seedfinders equal to the thread count of your processor minus the "threads to spare" count. If no threadsToSpare is provided, a default number of 4 threads is preserved.
+This will start a number of seedfinders equal the provided argument (4 if left blank).
 By default "seed-finder-random.jar" is the targeted seedfinder. This can be changed by editing the script, but there would be no point using it to run the sequential version.
 
 # How to build

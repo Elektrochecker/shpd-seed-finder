@@ -7,13 +7,12 @@ const args = process.argv;
 let depth = args[2];
 let mode = args[3];
 let itemFile = args[4];
-
-const threadsToSpare = args[5] || 4;
+const threadsArg = Math.abs(args[5]) || 4;
 
 //check arguments
 if (!(depth && mode && itemFile)) {
     console.error("missing arguments. syntax:");
-    console.log("node this.js <floors> <any/all> <itemFileName> <threadsToSpare>");
+    console.log("node this.js <floors> <any/all> <itemFileName> <threadsToUse>");
     process.exit();
 }
 
@@ -25,7 +24,8 @@ console.log("threads:   " + threads);
 console.log("\n");
 
 let startFinders = (d, m, f) => {
-    let n = Math.max(threads - threadsToSpare, 1);
+    let n = Math.min(threadsArg, threads);
+
     let cmd = `java -jar ${seedFinderPath} ${d} ${m} ${f} multithread.txt`;
     console.log(`starting ${n} seedfinders sparing ${threads - n} threads...`);
     console.log(`java command: ` + cmd + "\n");
