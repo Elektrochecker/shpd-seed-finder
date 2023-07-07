@@ -59,7 +59,7 @@ git clone https://github.com/00-Evan/shattered-pixel-dungeon
 2. Download the patch into the local repository. If you use Windows open the URL below and save it.
 
 ```
-wget "https://raw.githubusercontent.com/alessiomarotta/shpd-seed-finder/master/changes.patch"
+wget "https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/changes.patch"
 ```
 
 3. Apply the patch to the repository.
