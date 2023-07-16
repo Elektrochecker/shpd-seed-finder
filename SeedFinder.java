@@ -20,18 +20,18 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.CrystalMimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GoldenMimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
-import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 import com.shatteredpixel.shatteredpixeldungeon.items.EnergyCrystal;
 import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap.Type;
-import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
-import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
+import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.GoldenKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
@@ -43,8 +43,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.quest.Pickaxe;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 import com.watabou.utils.Random;
@@ -123,7 +123,9 @@ public class SeedFinder {
 
 				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) ||
 					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) ||
-					(i instanceof Ring) || (i instanceof Wand)) && i.cursed)
+					(i instanceof Ring) || (i instanceof Wand) ||
+					(i instanceof Artifact)) && i.cursed)
+					
 					builder.append("- cursed " + i.title().toLowerCase());
 
 				else
@@ -294,7 +296,6 @@ public class SeedFinder {
 		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
 
 		for (int i = 0; i < floors; i++) {
-			out.printf("--- floor %d ---\n\n", Dungeon.depth);
 
 			Level l = Dungeon.newLevel();
 			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
@@ -306,6 +307,61 @@ public class SeedFinder {
 			ArrayList<HeapItem> artifacts = new ArrayList<>();
 			ArrayList<HeapItem> wands = new ArrayList<>();
 			ArrayList<HeapItem> others = new ArrayList<>();
+
+			out.printf("--- floor %d: ", Dungeon.depth);
+
+			String feeling = l.feeling.toString();
+
+			switch (feeling) {
+				case "NONE":
+					feeling = "no feeling";
+					break;
+				case "CHASM":
+					feeling = "chasms";
+					break;
+				case "WATER":
+					feeling = "water";
+					break;
+				case "GRASS":
+					feeling = "vegetation";
+					break;
+				case "DARK":
+					feeling = "enemies moving in the darkness";
+					break;
+				case "LARGE":
+					feeling = "unusually large";
+					break;
+				case "TRAPS":
+					feeling = "traps";
+					break;
+				case "SECRETS":
+					feeling = "secrets";
+					break;
+			}
+
+			switch (Dungeon.depth) {
+				case 5:
+					feeling = "goo";
+					break;
+				
+				case 10:
+					feeling = "tengu";
+					break;
+				
+				case 15:
+					feeling = "DM-300";
+					break;
+				
+				case 20:
+					feeling = "dwarven king";
+					break;
+				
+				case 25:
+					feeling = "yog dzewa";
+					break;
+			}
+
+			out.printf(feeling + "\n\n");
 
 			// list quest rewards
 			if (Ghost.Quest.armor != null) {
@@ -360,9 +416,10 @@ public class SeedFinder {
 					else if (item instanceof Potion) potions.add(new HeapItem(item, h));
 					else if (item instanceof MeleeWeapon || item instanceof Armor) equipment.add(new HeapItem(item, h));
 					else if (item instanceof Ring) rings.add(new HeapItem(item, h));
-					else if (item instanceof Artifact) artifacts.add(new HeapItem(item, h));
 					else if (item instanceof Wand) wands.add(new HeapItem(item, h));
-					else others.add(new HeapItem(item, h));
+					else if (item instanceof Artifact) {
+						 artifacts.add(new HeapItem(item, h));
+					} else others.add(new HeapItem(item, h));
 				}
 			}
 
@@ -381,5 +438,4 @@ public class SeedFinder {
 
 		out.close();
     }
-
 }

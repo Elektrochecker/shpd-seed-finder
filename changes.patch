@@ -1,11 +1,11 @@
-From a41da331bb603ceca109acefec7bfd589b719f59 Mon Sep 17 00:00:00 2001
+From 80dfb26b83448c6f3e8b8aacea8816c4a94bb8f9 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Thu, 13 Jul 2023 12:14:21 +0200
-Subject: [PATCH] seedfinder
+Date: Sun, 16 Jul 2023 15:21:57 +0200
+Subject: [PATCH] seedfinder apply
 
 ---
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 385 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 441 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -13,7 +13,7 @@ Subject: [PATCH] seedfinder
  .../shatteredpixeldungeon/items/Heap.java     |  14 +-
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 9 files changed, 407 insertions(+), 19 deletions(-)
+ 9 files changed, 463 insertions(+), 19 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
@@ -31,10 +31,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..0cd6626b0
+index 000000000..2e04576ce
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,385 @@
+@@ -0,0 +1,441 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -160,7 +160,9 @@ index 000000000..0cd6626b0
 +
 +				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) ||
 +					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) ||
-+					(i instanceof Ring) || (i instanceof Wand)) && i.cursed)
++					(i instanceof Ring) || (i instanceof Wand) ||
++					(i instanceof Artifact)) && i.cursed)
++					
 +					builder.append("- cursed " + i.title().toLowerCase());
 +
 +				else
@@ -331,7 +333,6 @@ index 000000000..0cd6626b0
 +		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
 +
 +		for (int i = 0; i < floors; i++) {
-+			out.printf("--- floor %d ---\n\n", Dungeon.depth);
 +
 +			Level l = Dungeon.newLevel();
 +			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
@@ -343,6 +344,61 @@ index 000000000..0cd6626b0
 +			ArrayList<HeapItem> artifacts = new ArrayList<>();
 +			ArrayList<HeapItem> wands = new ArrayList<>();
 +			ArrayList<HeapItem> others = new ArrayList<>();
++
++			out.printf("--- floor %d: ", Dungeon.depth);
++
++			String feeling = l.feeling.toString();
++
++			switch (feeling) {
++				case "NONE":
++					feeling = "no feeling";
++					break;
++				case "CHASM":
++					feeling = "chasms";
++					break;
++				case "WATER":
++					feeling = "water";
++					break;
++				case "GRASS":
++					feeling = "vegetation";
++					break;
++				case "DARK":
++					feeling = "enemies moving in the darkness";
++					break;
++				case "LARGE":
++					feeling = "unusually large";
++					break;
++				case "TRAPS":
++					feeling = "traps";
++					break;
++				case "SECRETS":
++					feeling = "secrets";
++					break;
++			}
++
++			switch (Dungeon.depth) {
++				case 5:
++					feeling = "goo";
++					break;
++				
++				case 10:
++					feeling = "tengu";
++					break;
++				
++				case 15:
++					feeling = "DM-300";
++					break;
++				
++				case 20:
++					feeling = "dwarven king";
++					break;
++				
++				case 25:
++					feeling = "yog dzewa";
++					break;
++			}
++
++			out.printf(feeling + "\n\n");
 +
 +			// list quest rewards
 +			if (Ghost.Quest.armor != null) {
@@ -397,9 +453,10 @@ index 000000000..0cd6626b0
 +					else if (item instanceof Potion) potions.add(new HeapItem(item, h));
 +					else if (item instanceof MeleeWeapon || item instanceof Armor) equipment.add(new HeapItem(item, h));
 +					else if (item instanceof Ring) rings.add(new HeapItem(item, h));
-+					else if (item instanceof Artifact) artifacts.add(new HeapItem(item, h));
 +					else if (item instanceof Wand) wands.add(new HeapItem(item, h));
-+					else others.add(new HeapItem(item, h));
++					else if (item instanceof Artifact) {
++						 artifacts.add(new HeapItem(item, h));
++					} else others.add(new HeapItem(item, h));
 +				}
 +			}
 +
@@ -418,8 +475,8 @@ index 000000000..0cd6626b0
 +
 +		out.close();
 +    }
-+
 +}
+\ No newline at end of file
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
 index 6410e07cf..368294b25 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
@@ -552,5 +609,5 @@ index f448f2557..0733bf5ac 100644
  	}
  }
 -- 
-2.34.1
+2.41.0.windows.1
 
