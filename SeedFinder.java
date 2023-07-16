@@ -47,6 +47,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
+import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.watabou.utils.Random;
 
 public class SeedFinder {
@@ -128,7 +129,24 @@ public class SeedFinder {
 					
 					builder.append("- cursed " + i.title().toLowerCase());
 
-				else
+				else if (i instanceof Scroll || i instanceof Potion) {
+					String tabstring = "";
+					switch (i.trueName().length()) {
+						case 22:
+							tabstring = "  - ";
+							break;
+
+						case  23:
+							tabstring = " - ";
+							break;
+
+						default:
+							tabstring = "\t  - ";
+					}
+
+					builder.append("- " + i.trueName().toLowerCase() + tabstring + i.name().toLowerCase().replace(" potion", "").replace("scroll of ", "") + "");
+
+				} else
 					builder.append("- " + i.title().toLowerCase());
 
 				if (h.type != Type.HEAP)
@@ -291,7 +309,7 @@ public class SeedFinder {
 		Dungeon.init();
 
 		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
-								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class);
+								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
 
 		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
 
@@ -408,7 +426,9 @@ public class SeedFinder {
 			// list items
 			for (Heap h : heaps) {
 				for (Item item : h.items) {
-					item.identify();
+					if (!(item instanceof Scroll || item instanceof Potion)) {
+						item.identify();
+					}
 
 					if (h.type == Type.FOR_SALE) continue;
 					else if (blacklist.contains(item.getClass())) continue;

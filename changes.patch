@@ -1,19 +1,22 @@
-From 80dfb26b83448c6f3e8b8aacea8816c4a94bb8f9 Mon Sep 17 00:00:00 2001
+From 6180eb6ed1adba3b533e4fcc4817c9332fa24eee Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Sun, 16 Jul 2023 15:21:57 +0200
-Subject: [PATCH] seedfinder apply
+Date: Mon, 17 Jul 2023 00:34:51 +0200
+Subject: [PATCH] seedfinder patch
 
 ---
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 441 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 464 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
+ .../actors/hero/HeroClass.java                |  12 -
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
  .../actors/mobs/npcs/Wandmaker.java           |   2 +-
  .../shatteredpixeldungeon/items/Heap.java     |  14 +-
+ .../items/potions/Potion.java                 |   6 +-
+ .../items/scrolls/Scroll.java                 |   6 +-
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 9 files changed, 463 insertions(+), 19 deletions(-)
+ 12 files changed, 488 insertions(+), 41 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
@@ -31,10 +34,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..2e04576ce
+index 000000000..5bca3a2d9
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,441 @@
+@@ -0,0 +1,464 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -84,6 +87,7 @@ index 000000000..2e04576ce
 +import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 +import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 +import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
++import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 +import com.watabou.utils.Random;
 +
 +public class SeedFinder {
@@ -165,7 +169,24 @@ index 000000000..2e04576ce
 +					
 +					builder.append("- cursed " + i.title().toLowerCase());
 +
-+				else
++				else if (i instanceof Scroll || i instanceof Potion) {
++					String tabstring = "";
++					switch (i.trueName().length()) {
++						case 22:
++							tabstring = "  - ";
++							break;
++
++						case  23:
++							tabstring = " - ";
++							break;
++
++						default:
++							tabstring = "\t  - ";
++					}
++
++					builder.append("- " + i.trueName().toLowerCase() + tabstring + i.name().toLowerCase().replace(" potion", "").replace("scroll of ", "") + "");
++
++				} else
 +					builder.append("- " + i.title().toLowerCase());
 +
 +				if (h.type != Type.HEAP)
@@ -328,7 +349,7 @@ index 000000000..2e04576ce
 +		Dungeon.init();
 +
 +		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
-+								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class);
++								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
 +
 +		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
 +
@@ -445,7 +466,9 @@ index 000000000..2e04576ce
 +			// list items
 +			for (Heap h : heaps) {
 +				for (Item item : h.items) {
-+					item.identify();
++					if (!(item instanceof Scroll || item instanceof Potion)) {
++						item.identify();
++					}
 +
 +					if (h.type == Type.FOR_SALE) continue;
 +					else if (blacklist.contains(item.getClass())) continue;
@@ -500,6 +523,64 @@ index 6410e07cf..368294b25 100644
  	}
  
  	@Override
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/hero/HeroClass.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/hero/HeroClass.java
+index 92c8622f5..6f5e078a3 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/hero/HeroClass.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/hero/HeroClass.java
+@@ -105,8 +105,6 @@ public enum HeroClass {
+ 		Waterskin waterskin = new Waterskin();
+ 		waterskin.collect();
+ 
+-		new ScrollOfIdentify().identify();
+-
+ 		switch (this) {
+ 			case WARRIOR:
+ 				initWarrior( hero );
+@@ -166,8 +164,6 @@ public enum HeroClass {
+ 			hero.belongings.armor.affixSeal(new BrokenSeal());
+ 		}
+ 
+-		new PotionOfHealing().identify();
+-		new ScrollOfRage().identify();
+ 	}
+ 
+ 	private static void initMage( Hero hero ) {
+@@ -180,8 +176,6 @@ public enum HeroClass {
+ 
+ 		Dungeon.quickslot.setSlot(0, staff);
+ 
+-		new ScrollOfUpgrade().identify();
+-		new PotionOfLiquidFlame().identify();
+ 	}
+ 
+ 	private static void initRogue( Hero hero ) {
+@@ -197,8 +191,6 @@ public enum HeroClass {
+ 		Dungeon.quickslot.setSlot(0, cloak);
+ 		Dungeon.quickslot.setSlot(1, knives);
+ 
+-		new ScrollOfMagicMapping().identify();
+-		new PotionOfInvisibility().identify();
+ 	}
+ 
+ 	private static void initHuntress( Hero hero ) {
+@@ -209,8 +201,6 @@ public enum HeroClass {
+ 
+ 		Dungeon.quickslot.setSlot(0, bow);
+ 
+-		new PotionOfMindVision().identify();
+-		new ScrollOfLullaby().identify();
+ 	}
+ 
+ 	private static void initDuelist( Hero hero ) {
+@@ -224,8 +214,6 @@ public enum HeroClass {
+ 		Dungeon.quickslot.setSlot(0, hero.belongings.weapon);
+ 		Dungeon.quickslot.setSlot(1, spikes);
+ 
+-		new PotionOfStrength().identify();
+-		new ScrollOfMirrorImage().identify();
+ 	}
+ 
+ 	public String title() {
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
 index 0445e3684..cdbee598d 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
@@ -571,6 +652,40 @@ index 274d66d59..daf15be35 100644
  			default:
  				return peek().title();
  		}
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
+index 873f82fb6..95b323709 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
+@@ -334,11 +334,7 @@ public class Potion extends Item {
+ 	
+ 	@Override
+ 	public Item identify( boolean byHero ) {
+-		super.identify(byHero);
+-
+-		if (!isKnown()) {
+-			setKnown();
+-		}
++		
+ 		return this;
+ 	}
+ 	
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
+index 5b25129fa..239ada833 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
+@@ -213,11 +213,7 @@ public abstract class Scroll extends Item {
+ 	
+ 	@Override
+ 	public Item identify( boolean byHero ) {
+-		super.identify(byHero);
+-
+-		if (!isKnown()) {
+-			setKnown();
+-		}
++		
+ 		return this;
+ 	}
+ 	
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 index 98f7793b6..55be41208 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
