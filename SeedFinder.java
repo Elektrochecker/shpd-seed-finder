@@ -194,7 +194,7 @@ public class SeedFinder {
 		}
 
 
-		String seedDigits = Integer.toString(Random.Int(500000));
+		String seedDigits = Integer.toString(Random.Int(542900));
 		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
 			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
 				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
@@ -259,7 +259,8 @@ public class SeedFinder {
 					item.identify();
 
 					for (int j = 0; j < itemList.size(); j++) {
-						if (item.title().toLowerCase().contains(itemList.get(j))) {
+						if (item.title().toLowerCase().contains(itemList.get(j))
+							|| item.trueName().toLowerCase().contains(itemList.get(j))) {
 							if (itemsFound[j] == false) {
 								itemsFound[j] = true;
 								break;

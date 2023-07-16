@@ -1,11 +1,11 @@
-From 6180eb6ed1adba3b533e4fcc4817c9332fa24eee Mon Sep 17 00:00:00 2001
+From d9172a17cf0895b5e8174eaf7f86d0dfa42ee990 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Mon, 17 Jul 2023 00:34:51 +0200
-Subject: [PATCH] seedfinder patch
+Date: Mon, 17 Jul 2023 01:00:49 +0200
+Subject: [PATCH] changes
 
 ---
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 464 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 462 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/hero/HeroClass.java                |  12 -
  .../actors/mobs/ArmoredStatue.java            |   2 +-
@@ -16,7 +16,7 @@ Subject: [PATCH] seedfinder patch
  .../items/scrolls/Scroll.java                 |   6 +-
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 12 files changed, 488 insertions(+), 41 deletions(-)
+ 12 files changed, 486 insertions(+), 41 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
@@ -34,10 +34,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..5bca3a2d9
+index 000000000..01057d4b0
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,464 @@
+@@ -0,0 +1,462 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -234,7 +234,7 @@ index 000000000..5bca3a2d9
 +		}
 +
 +
-+		String seedDigits = Integer.toString(Random.Int(500000));
++		String seedDigits = Integer.toString(Random.Int(542900));
 +		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
 +			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
 +				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
@@ -299,7 +299,8 @@ index 000000000..5bca3a2d9
 +					item.identify();
 +
 +					for (int j = 0; j < itemList.size(); j++) {
-+						if (item.title().toLowerCase().contains(itemList.get(j))) {
++						if (item.title().toLowerCase().contains(itemList.get(j))
++							|| item.trueName().toLowerCase().contains(itemList.get(j))) {
 +							if (itemsFound[j] == false) {
 +								itemsFound[j] = true;
 +								break;
