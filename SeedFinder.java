@@ -264,7 +264,7 @@ public class SeedFinder {
 
 					for (int j = 0; j < itemList.size(); j++) {
 						if (item.title().toLowerCase().contains(itemList.get(j))
-							|| item.trueName().toLowerCase().contains(itemList.get(j))) {
+							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
 							if (itemsFound[j] == false) {
 								itemsFound[j] = true;
 								break;

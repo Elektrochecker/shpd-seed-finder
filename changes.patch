@@ -1,7 +1,7 @@
-From 13a6f60c83d0bb169a57956da7242bc8cd13fe8a Mon Sep 17 00:00:00 2001
+From 85fa9e48cf9ad5d3c9e4a1d6f2595bd5971debf7 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Mon, 17 Jul 2023 13:19:34 +0200
-Subject: [PATCH] seedfinder
+Date: Mon, 17 Jul 2023 13:35:24 +0200
+Subject: [PATCH] seedfinder_ring_searching
 
 ---
  .gitignore                                    |   3 +
@@ -49,7 +49,7 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..e8c4779d3
+index 000000000..88413451c
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 @@ -0,0 +1,464 @@
@@ -319,7 +319,7 @@ index 000000000..e8c4779d3
 +
 +					for (int j = 0; j < itemList.size(); j++) {
 +						if (item.title().toLowerCase().contains(itemList.get(j))
-+							|| item.trueName().toLowerCase().contains(itemList.get(j))) {
++							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
 +							if (itemsFound[j] == false) {
 +								itemsFound[j] = true;
 +								break;
@@ -671,7 +671,7 @@ index 274d66d59..daf15be35 100644
  				return peek().title();
  		}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
-index 8cb73ef0d..3a03eb808 100644
+index 8cb73ef0d..77a6447f9 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
 @@ -470,6 +470,10 @@ public class Item implements Bundlable {
@@ -680,7 +680,7 @@ index 8cb73ef0d..3a03eb808 100644
  	}
 +
 +	public String anonymousName() {
-+		return "(anonymous):" + trueName();
++		return "ITEM_NAME_ANONYMOUS";
 +	}
  	
  	public final String trueName() {
