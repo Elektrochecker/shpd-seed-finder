@@ -130,28 +130,31 @@ public class SeedFinder {
 					builder.append("- cursed " + i.title().toLowerCase());
 
 				else if (i instanceof Scroll || i instanceof Potion) {
+
+					//make anonymous names show in the same column to look nice
 					String tabstring = "";
-					switch (i.trueName().length()) {
-						case 22:
-							tabstring = "  - ";
-							break;
-
-						case  23:
-							tabstring = " - ";
-							break;
-
-						default:
-							tabstring = "\t  - ";
+					for (int j = 0; j < 32 - i.trueName().length(); j++) {
+						tabstring += " ";
 					}
 
 					builder.append("- " + i.trueName().toLowerCase() + tabstring + i.name().toLowerCase().replace(" potion", "").replace("scroll of ", "") + "");
 
-				} else
+					//if both location and type are logged only space to the right once
+					if (h.type != Type.HEAP) {
+						builder.append(" (" + h.title().toLowerCase() + ")");
+					}
+				} else {
 					builder.append("- " + i.title().toLowerCase());
 
-				if (h.type != Type.HEAP)
-					builder.append(" (" + h.title().toLowerCase() + ")");
+					//also make item location log in the same column
+					if (h.type != Type.HEAP) {
+						for (int j = 0; j < 32 - i.title().length(); j++) {
+							builder.append(" ");
+						}
 
+					builder.append("(" + h.title().toLowerCase() + ")");
+					}
+				}
 				builder.append("\n");
 			}
 
