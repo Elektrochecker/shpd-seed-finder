@@ -123,21 +123,28 @@ public class SeedFinder {
 				Heap h = item.heap;
 
 				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) ||
-					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) ||
-					(i instanceof Ring) || (i instanceof Wand) ||
-					(i instanceof Artifact)) && i.cursed)
+					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || 
+					(i instanceof Wand) || (i instanceof Artifact)) && i.cursed)
 					
 					builder.append("- cursed " + i.title().toLowerCase());
 
-				else if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
+				if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
+					int txtLength = i.title().length();
+
+					if(i.cursed) {
+						builder.append("- cursed ");
+						txtLength += 7;
+					} else {
+						builder.append("- ");
+					}
 
 					//make anonymous names show in the same column to look nice
 					String tabstring = "";
-					for (int j = 0; j < Math.max(1, 32 - i.title().length()); j++) {
+					for (int j = 0; j < Math.max(1, 33 - txtLength); j++) {
 						tabstring += " ";
 					}
 
-					builder.append("- " + i.title().toLowerCase() + tabstring); //item
+					builder.append(i.title().toLowerCase() + tabstring); //item
 					builder.append(i.anonymousName().toLowerCase().replace(" potion", "").replace("scroll of ", "").replace(" ring", "")); //color, rune or gem
 
 					//if both location and type are logged only space to the right once
@@ -149,7 +156,7 @@ public class SeedFinder {
 
 					//also make item location log in the same column
 					if (h.type != Type.HEAP) {
-						for (int j = 0; j < 32 - i.title().length(); j++) {
+						for (int j = 0; j < 33 - i.title().length(); j++) {
 							builder.append(" ");
 						}
 
