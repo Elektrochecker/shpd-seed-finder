@@ -129,15 +129,16 @@ public class SeedFinder {
 					
 					builder.append("- cursed " + i.title().toLowerCase());
 
-				else if (i instanceof Scroll || i instanceof Potion) {
+				else if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
 
 					//make anonymous names show in the same column to look nice
 					String tabstring = "";
-					for (int j = 0; j < 32 - i.trueName().length(); j++) {
+					for (int j = 0; j < Math.max(1, 32 - i.title().length()); j++) {
 						tabstring += " ";
 					}
 
-					builder.append("- " + i.trueName().toLowerCase() + tabstring + i.name().toLowerCase().replace(" potion", "").replace("scroll of ", "") + "");
+					builder.append("- " + i.title().toLowerCase() + tabstring); //item
+					builder.append(i.anonymousName().toLowerCase().replace(" potion", "").replace("scroll of ", "").replace(" ring", "")); //color, rune or gem
 
 					//if both location and type are logged only space to the right once
 					if (h.type != Type.HEAP) {
@@ -430,9 +431,7 @@ public class SeedFinder {
 			// list items
 			for (Heap h : heaps) {
 				for (Item item : h.items) {
-					if (!(item instanceof Scroll || item instanceof Potion)) {
-						item.identify();
-					}
+					item.identify();
 
 					if (h.type == Type.FOR_SALE) continue;
 					else if (blacklist.contains(item.getClass())) continue;
