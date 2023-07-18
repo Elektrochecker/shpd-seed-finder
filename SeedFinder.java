@@ -206,6 +206,8 @@ public class SeedFinder {
 	}
 
     public SeedFinder(String[] args) {
+		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
+
 		parseArgs(args);
 
 		if (args.length == 2) {
@@ -279,21 +281,66 @@ public class SeedFinder {
 		boolean[] itemsFound = new boolean[itemList.size()];
 
 		for (int i = 0; i < floors; i++) {
+
 			Level l = Dungeon.newLevel();
 
-			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
-			heaps.addAll(getMobDrops(l));
+			//skip boss floors
+			if (Dungeon.depth % 5 != 0) {
 
-			for (Heap h : heaps) {
-				for (Item item : h.items) {
-					item.identify();
+				ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
+				heaps.addAll(getMobDrops(l));
 
+				//check heap items
+				for (Heap h : heaps) {
+					for (Item item : h.items) {
+						item.identify();
+
+						for (int j = 0; j < itemList.size(); j++) {
+							if (item.title().toLowerCase().contains(itemList.get(j))
+								|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
+								if (itemsFound[j] == false) {
+									itemsFound[j] = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				//check sacrificial fire
+				if (l.sacrificialFireItem != null) {
 					for (int j = 0; j < itemList.size(); j++) {
-						if (item.title().toLowerCase().contains(itemList.get(j))
-							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
-							if (itemsFound[j] == false) {
+						if (l.sacrificialFireItem.title().toLowerCase().contains(itemList.get(j))) {
+							if (!itemsFound[j]) {
 								itemsFound[j] = true;
 								break;
+							}
+						}
+					}
+				}
+
+				//check quests
+				Item[] questitems = {
+					Ghost.Quest.armor,
+					Ghost.Quest.weapon,
+					Wandmaker.Quest.wand1,
+					Wandmaker.Quest.wand2,
+					Imp.Quest.reward
+				};
+
+				if (Ghost.Quest.armor != null) {
+					questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
+					questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
+				}
+
+				for (int j = 0; j < itemList.size(); j++) {
+					for (int k = 0; k < 5; k++) {
+						if (questitems[k] != null) {
+							if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
+								if (!itemsFound[j]) {
+									itemsFound[j] = true;
+									break;
+								}
 							}
 						}
 					}
@@ -344,16 +391,21 @@ public class SeedFinder {
 			SPDSettings.lastDaily(DAY * currentDay);
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
 			format.setTimeZone(TimeZone.getTimeZone("UTC"));
-			seedinfotext = format.format(new Date(SPDSettings.lastDaily()));
-
+			
 			GamesInProgress.selectedClass = HeroClass.WARRIOR;
 			Dungeon.init();
+			seedinfotext += format.format(new Date(SPDSettings.lastDaily()));
+
+			out.printf("Items for daily run %s (%d):\n\n", seedinfotext, Dungeon.seed);
 		} else {
+			Dungeon.daily = false;
 			SPDSettings.customSeed(seed);
 
 			GamesInProgress.selectedClass = HeroClass.WARRIOR;
 			Dungeon.init();
-			seedinfotext = DungeonSeed.convertToCode(Dungeon.seed);
+			seedinfotext += DungeonSeed.convertToCode(Dungeon.seed);
+
+			out.printf("Items for seed %s (%d):\n\n", seedinfotext, Dungeon.seed);
 		}
 
 		
@@ -361,9 +413,7 @@ public class SeedFinder {
 
 		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
 								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
-
-		// out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
-		out.printf("Items for seed %s (%d):\n\n", seedinfotext, Dungeon.seed);
+		
 
 		for (int i = 0; i < floors; i++) {
 
@@ -436,8 +486,8 @@ public class SeedFinder {
 			// list quest rewards
 			if (Ghost.Quest.armor != null) {
 				ArrayList<Item> rewards = new ArrayList<>();
-				rewards.add(Ghost.Quest.armor.identify());
-				rewards.add(Ghost.Quest.weapon.identify());
+				rewards.add(Ghost.Quest.armor.inscribe(Ghost.Quest.glyph).identify());
+				rewards.add(Ghost.Quest.weapon.enchant(Ghost.Quest.enchant).identify());
 				Ghost.Quest.complete();
 
 				addTextQuest("Ghost quest rewards", rewards, builder);
@@ -473,6 +523,15 @@ public class SeedFinder {
 				addTextQuest("Imp quest reward", rewards, builder);
 			}
 
+			//sacrificial fire
+			if (l.sacrificialFireItem != null) {
+				Item fireItem = l.sacrificialFireItem.identify();
+
+				builder.append("- " + fireItem.title().toLowerCase() + " (sacrificial fire)");
+
+				builder.append("\n\n");
+			}
+
 			heaps.addAll(getMobDrops(l));
 
 			// list items
@@ -493,9 +552,9 @@ public class SeedFinder {
 				}
 			}
 
+			addTextItems("Equipment", equipment, builder);
 			addTextItems("Scrolls", scrolls, builder);
 			addTextItems("Potions", potions, builder);
-			addTextItems("Equipment", equipment, builder);
 			addTextItems("Rings", rings, builder);
 			addTextItems("Artifacts", artifacts, builder);
 			addTextItems("Wands", wands, builder);

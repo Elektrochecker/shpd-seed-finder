@@ -1,12 +1,12 @@
-From a4f12819dc791547e695a3f2728645011dae492c Mon Sep 17 00:00:00 2001
+From 0850bedb5ec36398efec232a32fef62ce6b4216e Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Tue, 18 Jul 2023 12:01:48 +0200
-Subject: [PATCH] seedfinder
+Date: Tue, 18 Jul 2023 22:49:05 +0200
+Subject: [PATCH] quest scanning, sacrificial fire
 
 ---
  .gitignore                                    |  43 +-
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 472 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 570 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -16,9 +16,11 @@ Subject: [PATCH] seedfinder
  .../items/potions/Potion.java                 |   5 +
  .../items/rings/Ring.java                     |   5 +
  .../items/scrolls/Scroll.java                 |   5 +
+ .../shatteredpixeldungeon/levels/Level.java   |   2 +
+ .../levels/rooms/special/SacrificeRoom.java   |   1 +
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 14 files changed, 536 insertions(+), 39 deletions(-)
+ 16 files changed, 637 insertions(+), 39 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -85,10 +87,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..6a2287317
+index 000000000..026b1ae31
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,570 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -104,6 +106,11 @@ index 000000000..6a2287317
 +import java.util.LinkedList;
 +import java.util.List;
 +import java.util.Scanner;
++import java.text.DateFormat;
++import java.util.Date;
++import java.text.SimpleDateFormat;
++import java.util.Locale;
++import java.util.TimeZone;
 +
 +import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
@@ -140,6 +147,7 @@ index 000000000..6a2287317
 +import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 +import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 +import com.watabou.utils.Random;
++import com.watabou.noosa.Game;
 +
 +public class SeedFinder {
 +	enum Condition {ANY, ALL};
@@ -150,6 +158,9 @@ index 000000000..6a2287317
 +		public static String itemListFile;
 +		public static String ouputFile;
 +		public static long seed;
++
++		public static boolean searchForDaily;
++		public static int DailyOffset;
 +	}
 +
 +	public class HeapItem {
@@ -165,12 +176,21 @@ index 000000000..6a2287317
 +	List<Class<? extends Item>> blacklist;
 +	ArrayList<String> itemList;
 +
-+	// TODO: make it parse the item list directly from the arguments
 +	private void parseArgs(String[] args) {
 +		if (args.length == 2) {
 +			Options.ouputFile = "stdout";
 +			Options.floors = Integer.parseInt(args[0]);
 +			Options.seed = DungeonSeed.convertFromText(args[1]);
++
++			if (args[1].contains("daily")) {
++				Options.searchForDaily = true;
++				String offsetNumber = args[1].replace("daily", "");
++
++				if (offsetNumber != "") {
++					Options.DailyOffset = Integer.valueOf(offsetNumber);
++				}
++				
++			}
 +
 +			return;			
 +		}
@@ -279,6 +299,8 @@ index 000000000..6a2287317
 +	}
 +
 +    public SeedFinder(String[] args) {
++		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
++
 +		parseArgs(args);
 +
 +		if (args.length == 2) {
@@ -352,21 +374,66 @@ index 000000000..6a2287317
 +		boolean[] itemsFound = new boolean[itemList.size()];
 +
 +		for (int i = 0; i < floors; i++) {
++
 +			Level l = Dungeon.newLevel();
 +
-+			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
-+			heaps.addAll(getMobDrops(l));
++			//skip boss floors
++			if (Dungeon.depth % 5 != 0) {
 +
-+			for (Heap h : heaps) {
-+				for (Item item : h.items) {
-+					item.identify();
++				ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
++				heaps.addAll(getMobDrops(l));
 +
++				//check heap items
++				for (Heap h : heaps) {
++					for (Item item : h.items) {
++						item.identify();
++
++						for (int j = 0; j < itemList.size(); j++) {
++							if (item.title().toLowerCase().contains(itemList.get(j))
++								|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
++								if (itemsFound[j] == false) {
++									itemsFound[j] = true;
++									break;
++								}
++							}
++						}
++					}
++				}
++
++				//check sacrificial fire
++				if (l.sacrificialFireItem != null) {
 +					for (int j = 0; j < itemList.size(); j++) {
-+						if (item.title().toLowerCase().contains(itemList.get(j))
-+							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
-+							if (itemsFound[j] == false) {
++						if (l.sacrificialFireItem.title().toLowerCase().contains(itemList.get(j))) {
++							if (!itemsFound[j]) {
 +								itemsFound[j] = true;
 +								break;
++							}
++						}
++					}
++				}
++
++				//check quests
++				Item[] questitems = {
++					Ghost.Quest.armor,
++					Ghost.Quest.weapon,
++					Wandmaker.Quest.wand1,
++					Wandmaker.Quest.wand2,
++					Imp.Quest.reward
++				};
++
++				if (Ghost.Quest.armor != null) {
++					questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
++					questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
++				}
++
++				for (int j = 0; j < itemList.size(); j++) {
++					for (int k = 0; k < 5; k++) {
++						if (questitems[k] != null) {
++							if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
++								if (!itemsFound[j]) {
++									itemsFound[j] = true;
++									break;
++								}
 +							}
 +						}
 +					}
@@ -407,15 +474,39 @@ index 000000000..6a2287317
 +		} catch (FileNotFoundException e) { // gotta love Java mandatory exceptions
 +			e.printStackTrace();
 +		}
++		
++		String seedinfotext = "";
 +
-+		SPDSettings.customSeed(seed);
-+		GamesInProgress.selectedClass = HeroClass.WARRIOR;
-+		Dungeon.init();
++		if (Options.searchForDaily) {
++			Dungeon.daily = true;
++			long DAY = 1000 * 60 * 60 * 24;
++			long currentDay = (long) Math.floor(Game.realTime/DAY) + Options.DailyOffset;
++			SPDSettings.lastDaily(DAY * currentDay);
++			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
++			format.setTimeZone(TimeZone.getTimeZone("UTC"));
++			
++			GamesInProgress.selectedClass = HeroClass.WARRIOR;
++			Dungeon.init();
++			seedinfotext += format.format(new Date(SPDSettings.lastDaily()));
++
++			out.printf("Items for daily run %s (%d):\n\n", seedinfotext, Dungeon.seed);
++		} else {
++			Dungeon.daily = false;
++			SPDSettings.customSeed(seed);
++
++			GamesInProgress.selectedClass = HeroClass.WARRIOR;
++			Dungeon.init();
++			seedinfotext += DungeonSeed.convertToCode(Dungeon.seed);
++
++			out.printf("Items for seed %s (%d):\n\n", seedinfotext, Dungeon.seed);
++		}
++
++		
++		
 +
 +		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
 +								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
-+
-+		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
++		
 +
 +		for (int i = 0; i < floors; i++) {
 +
@@ -488,8 +579,8 @@ index 000000000..6a2287317
 +			// list quest rewards
 +			if (Ghost.Quest.armor != null) {
 +				ArrayList<Item> rewards = new ArrayList<>();
-+				rewards.add(Ghost.Quest.armor.identify());
-+				rewards.add(Ghost.Quest.weapon.identify());
++				rewards.add(Ghost.Quest.armor.inscribe(Ghost.Quest.glyph).identify());
++				rewards.add(Ghost.Quest.weapon.enchant(Ghost.Quest.enchant).identify());
 +				Ghost.Quest.complete();
 +
 +				addTextQuest("Ghost quest rewards", rewards, builder);
@@ -525,6 +616,15 @@ index 000000000..6a2287317
 +				addTextQuest("Imp quest reward", rewards, builder);
 +			}
 +
++			//sacrificial fire
++			if (l.sacrificialFireItem != null) {
++				Item fireItem = l.sacrificialFireItem.identify();
++
++				builder.append("- " + fireItem.title().toLowerCase() + " (sacrificial fire)");
++
++				builder.append("\n\n");
++			}
++
 +			heaps.addAll(getMobDrops(l));
 +
 +			// list items
@@ -545,9 +645,9 @@ index 000000000..6a2287317
 +				}
 +			}
 +
++			addTextItems("Equipment", equipment, builder);
 +			addTextItems("Scrolls", scrolls, builder);
 +			addTextItems("Potions", potions, builder);
-+			addTextItems("Equipment", equipment, builder);
 +			addTextItems("Rings", rings, builder);
 +			addTextItems("Artifacts", artifacts, builder);
 +			addTextItems("Wands", wands, builder);
@@ -718,6 +818,31 @@ index 5b25129fa..430fa3a1b 100644
  	
  	@Override
  	public String info() {
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
+index 9444c0db1..805e81f3e 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
+@@ -184,6 +184,8 @@ public abstract class Level implements Bundlable {
+ 	private static final String BLOBS		= "blobs";
+ 	private static final String FEELING		= "feeling";
+ 
++	public Item sacrificialFireItem = null;
++
+ 	public void create() {
+ 
+ 		Random.pushGenerator( Dungeon.seedCurDepth() );
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
+index b4dfe5d86..e3add3c7d 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
+@@ -99,6 +99,7 @@ public class SacrificeRoom extends SpecialRoom {
+ 			}
+ 		}
+ 		prize.cursed = prize.cursedKnown = true;
++		level.sacrificialFireItem = prize;
+ 
+ 		return prize;
+ 	}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 index 98f7793b6..55be41208 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
