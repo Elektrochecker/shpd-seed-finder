@@ -122,11 +122,12 @@ public class SeedFinder {
 				Item i = item.item;
 				Heap h = item.heap;
 
-				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) ||
-					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || 
-					(i instanceof Wand) || (i instanceof Artifact)) && i.cursed)
-					
-					builder.append("- cursed " + i.title().toLowerCase());
+				String cursed = "";
+
+				if  (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) || (i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || (i instanceof Wand) || (i instanceof Artifact)) && i.cursed) {
+
+					cursed = "cursed ";
+				}
 
 				if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
 					int txtLength = i.title().length();
@@ -152,11 +153,11 @@ public class SeedFinder {
 						builder.append(" (" + h.title().toLowerCase() + ")");
 					}
 				} else {
-					builder.append("- " + i.title().toLowerCase());
+					builder.append("- "+ cursed + i.title().toLowerCase());
 
 					//also make item location log in the same column
 					if (h.type != Type.HEAP) {
-						for (int j = 0; j < 33 - i.title().length(); j++) {
+						for (int j = 0; j < 33 - i.title().length() - cursed.length(); j++) {
 							builder.append(" ");
 						}
 

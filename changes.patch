@@ -1,12 +1,12 @@
-From a4701b48362688ac91ef43648fa088f8311a895e Mon Sep 17 00:00:00 2001
+From a4f12819dc791547e695a3f2728645011dae492c Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Mon, 17 Jul 2023 19:12:05 +0200
+Date: Tue, 18 Jul 2023 12:01:48 +0200
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |  43 +-
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 471 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 472 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -18,7 +18,7 @@ Subject: [PATCH] seedfinder
  .../items/scrolls/Scroll.java                 |   5 +
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 14 files changed, 535 insertions(+), 39 deletions(-)
+ 14 files changed, 536 insertions(+), 39 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -85,10 +85,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..faf3725bb
+index 000000000..6a2287317
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,471 @@
+@@ -0,0 +1,472 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.FileNotFoundException;
@@ -213,11 +213,12 @@ index 000000000..faf3725bb
 +				Item i = item.item;
 +				Heap h = item.heap;
 +
-+				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) ||
-+					(i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || 
-+					(i instanceof Wand) || (i instanceof Artifact)) && i.cursed)
-+					
-+					builder.append("- cursed " + i.title().toLowerCase());
++				String cursed = "";
++
++				if  (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) || (i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || (i instanceof Wand) || (i instanceof Artifact)) && i.cursed) {
++
++					cursed = "cursed ";
++				}
 +
 +				if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
 +					int txtLength = i.title().length();
@@ -243,11 +244,11 @@ index 000000000..faf3725bb
 +						builder.append(" (" + h.title().toLowerCase() + ")");
 +					}
 +				} else {
-+					builder.append("- " + i.title().toLowerCase());
++					builder.append("- "+ cursed + i.title().toLowerCase());
 +
 +					//also make item location log in the same column
 +					if (h.type != Type.HEAP) {
-+						for (int j = 0; j < 33 - i.title().length(); j++) {
++						for (int j = 0; j < 33 - i.title().length() - cursed.length(); j++) {
 +							builder.append(" ");
 +						}
 +
