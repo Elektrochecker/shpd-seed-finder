@@ -285,7 +285,7 @@ public class SeedFinder {
 			Level l = Dungeon.newLevel();
 
 			//skip boss floors
-			if (Dungeon.depth % 5 != 0) {
+			if (Dungeon.depth % 5 != 0) continue;
 
 				ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
 				heaps.addAll(getMobDrops(l));
@@ -315,7 +315,6 @@ public class SeedFinder {
 								itemsFound[j] = true;
 								break;
 							}
-						}
 					}
 				}
 
