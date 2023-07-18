@@ -13,6 +13,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.text.DateFormat;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
@@ -49,6 +54,7 @@ import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.watabou.utils.Random;
+import com.watabou.noosa.Game;
 
 public class SeedFinder {
 	enum Condition {ANY, ALL};
@@ -59,6 +65,9 @@ public class SeedFinder {
 		public static String itemListFile;
 		public static String ouputFile;
 		public static long seed;
+
+		public static boolean searchForDaily;
+		public static int DailyOffset;
 	}
 
 	public class HeapItem {
@@ -74,12 +83,21 @@ public class SeedFinder {
 	List<Class<? extends Item>> blacklist;
 	ArrayList<String> itemList;
 
-	// TODO: make it parse the item list directly from the arguments
 	private void parseArgs(String[] args) {
 		if (args.length == 2) {
 			Options.ouputFile = "stdout";
 			Options.floors = Integer.parseInt(args[0]);
 			Options.seed = DungeonSeed.convertFromText(args[1]);
+
+			if (args[1].contains("daily")) {
+				Options.searchForDaily = true;
+				String offsetNumber = args[1].replace("daily", "");
+
+				if (offsetNumber != "") {
+					Options.DailyOffset = Integer.valueOf(offsetNumber);
+				}
+				
+			}
 
 			return;			
 		}
@@ -316,15 +334,36 @@ public class SeedFinder {
 		} catch (FileNotFoundException e) { // gotta love Java mandatory exceptions
 			e.printStackTrace();
 		}
+		
+		String seedinfotext = "";
 
-		SPDSettings.customSeed(seed);
-		GamesInProgress.selectedClass = HeroClass.WARRIOR;
-		Dungeon.init();
+		if (Options.searchForDaily) {
+			Dungeon.daily = true;
+			long DAY = 1000 * 60 * 60 * 24;
+			long currentDay = (long) Math.floor(Game.realTime/DAY) + Options.DailyOffset;
+			SPDSettings.lastDaily(DAY * currentDay);
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+			format.setTimeZone(TimeZone.getTimeZone("UTC"));
+			seedinfotext = format.format(new Date(SPDSettings.lastDaily()));
+
+			GamesInProgress.selectedClass = HeroClass.WARRIOR;
+			Dungeon.init();
+		} else {
+			SPDSettings.customSeed(seed);
+
+			GamesInProgress.selectedClass = HeroClass.WARRIOR;
+			Dungeon.init();
+			seedinfotext = DungeonSeed.convertToCode(Dungeon.seed);
+		}
+
+		
+		
 
 		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
 								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
 
-		out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+		// out.printf("Items for seed %s (%d):\n\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+		out.printf("Items for seed %s (%d):\n\n", seedinfotext, Dungeon.seed);
 
 		for (int i = 0; i < floors; i++) {
 
