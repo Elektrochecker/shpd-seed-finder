@@ -23,13 +23,18 @@ java -jar seed-finder.jar floors seed
 
 ### daily runs
 
-syntax `java -jar seed-finder.jar <floors> daily<offset>` where `<offset>` is an integer preceded by either `+` or `-`
+syntax 
+```
+java -jar seed-finder.jar <floors> daily<offset>
+```
+where `<offset>` is an integer preceded by either `+` or `-`
 
-examples
-todays daily:       `java -jar seed-finder.jar 24 daily`
-yesterdays daily:   `java -jar seed-finder.jar 24 daily-1`
-tomorrows daily:    `java -jar seed-finder.jar 24 daily+1`
-last weeks daily:   `java -jar seed-finder.jar 24 daily-7`
+examples:
+
+- todays daily:       `java -jar seed-finder.jar 24 daily`
+- yesterdays daily:   `java -jar seed-finder.jar 24 daily-1`
+- tomorrows daily:    `java -jar seed-finder.jar 24 daily+1`
+- last weeks daily:   `java -jar seed-finder.jar 24 daily-7`
 
 ## Finder mode
 
