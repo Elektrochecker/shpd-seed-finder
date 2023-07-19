@@ -10,6 +10,7 @@ In this repository I will contribute to Shattered Pixel Dungeon v2.0.0 and above
 Download a precompiled .jar from the releases tab or build your own using the instructions below.
 
 ## Seed display mode
+### seeded runs
 
 If no more than two arguments are provided, the items found in a given seed will be printed on the screen:
 
@@ -19,6 +20,16 @@ java -jar seed-finder.jar floors seed
 
 - **floors**: maximum depth to display
 - **seed**: dungeon seed to analyze
+
+### daily runs
+
+syntax `java -jar seed-finder.jar <floors> daily<offset>` where `<offset>` is an integer preceded by either `+` or `-`
+
+examples
+todays daily:       `java -jar seed-finder.jar 24 daily`
+yesterdays daily:   `java -jar seed-finder.jar 24 daily-1`
+tomorrows daily:    `java -jar seed-finder.jar 24 daily+1`
+last weeks daily:   `java -jar seed-finder.jar 24 daily-7`
 
 ## Finder mode
 
