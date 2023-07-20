@@ -15,7 +15,7 @@ Download a precompiled .jar from the releases tab or build your own using the in
 If no more than two arguments are provided, the items found in a given seed will be printed on the screen:
 
 ```
-java -jar seed-finder.jar floors seed
+java -jar seed-finder.jar <floors> <seed>
 ```
 
 - **floors**: maximum depth to display
@@ -41,7 +41,7 @@ examples:
 If al least 3 arguments are provided, the application will try to find a specific seed:
 
 ```
-java -jar seed-finder.jar floors condition item_list [output_file]
+java -jar seed-finder.jar <floors> <condition> <item_list> [output_file]
 ```
 
 - **floors**: maximum depth to look for the items
