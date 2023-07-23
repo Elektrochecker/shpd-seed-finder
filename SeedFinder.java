@@ -76,6 +76,10 @@ public class SeedFinder {
 		public static boolean ignoreBlacklist;
 		public static boolean useChallenges;
 		public static int challenges;
+
+		public static boolean trueRandom;
+		public static boolean sequentialMode;
+		public static long startingSeed;
 	}
 
 	public class HeapItem {
@@ -133,33 +137,43 @@ public class SeedFinder {
 				//if no config is present, restore these values
 				prop.setProperty("useChallenges", "true");
 				prop.setProperty("ignoreBlacklist", "false");
+				prop.setProperty("trueRandomMode", "false");
+				prop.setProperty("sequentialMode", "false");
+				prop.setProperty("startingSeed", "0");
 
 				prop.setProperty("chal.hostileChampions", "false");
 				prop.setProperty("chal.badderBosses", "false");
 				prop.setProperty("chal.onDiet", "false");
 				prop.setProperty("chal.faithIsMyArmor", "false");
-				prop.setProperty("chal.Pharmacophobia", "false");
+				prop.setProperty("chal.pharmacophobia", "false");
 				prop.setProperty("chal.barrenLand", "false");
 				prop.setProperty("chal.swarmIntelligence", "false");
 				prop.setProperty("chal.intoDarkness", "false");
 				prop.setProperty("chal.forbiddenRunes", "false");
 
 				prop.store(output, null);
+
+				System.out.printf("\nERROR: no config file found. created " + fileName + "\n\n");
 			} catch (IOException io) {
 			}
 		} catch (IOException ex) {
 		}
 
+		//pull options from config
 		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
 		Options.ignoreBlacklist = cfg.getProperty("ignoreBlacklist").equals("true");
+		Options.trueRandom = cfg.getProperty("trueRandomMode").equals("true");
+		Options.sequentialMode = cfg.getProperty("sequentialMode").equals("true");
+		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
 
+		//build challenge code from config
 		Options.challenges = 0;
 		if (Options.useChallenges) {
 			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true")	? Challenges.CHAMPION_ENEMIES : 0;
 			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true")		? Challenges.STRONGER_BOSSES : 0;
 			Options.challenges += cfg.getProperty("chal.onDiet").equals("true")				? Challenges.NO_FOOD : 0;
 			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true")		? Challenges.NO_ARMOR : 0;
-			Options.challenges += cfg.getProperty("chal.Pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
+			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
 			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true")			? Challenges.NO_HERBALISM : 0;
 			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")	? Challenges.SWARM_INTELLIGENCE : 0;
 			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true")		? Challenges.DARKNESS : 0;
@@ -262,8 +276,8 @@ public class SeedFinder {
     public SeedFinder(String[] args) {
 		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
 
+		parseConfig("seedfinder.cfg");
 		parseArgs(args);
-		parseConfig("seedfinder.config");
 
 		if (args.length == 2) {
 			logSeedItems(Long.toString(Options.seed), Options.floors);
@@ -281,11 +295,33 @@ public class SeedFinder {
 		}
 
 
-		String seedDigits = Integer.toString(Random.Int(542900));
-		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
-			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
-				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
-				logSeedItems(seedDigits + Integer.toString(i), Options.floors);
+		//only generate natural seeds
+		if (Options.trueRandom) {
+			for (int i = 0; i < DungeonSeed.TOTAL_SEEDS; i++) {
+				long seed = DungeonSeed.randomSeed();
+				if (testSeed(Long.toString(seed), Options.floors)) {
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					logSeedItems(Long.toString(seed), Options.floors);
+				}
+			}
+
+		//sequential mode: start at 0
+		} else if (Options.sequentialMode) {
+			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
+				if (testSeed(Long.toString(i), Options.floors)) {
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					logSeedItems(Long.toString(i), Options.floors);
+				}
+			}
+
+		//default (random) mode
+		} else {
+			String seedDigits = Integer.toString(Random.Int(542900));
+			for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
+				if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					logSeedItems(seedDigits + Integer.toString(i), Options.floors);
+				}
 			}
 		}
 	}

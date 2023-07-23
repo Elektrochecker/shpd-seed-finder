@@ -1,12 +1,12 @@
-From b49eb186eb162f51bb6e34455239968bc8d385c7 Mon Sep 17 00:00:00 2001
+From 6d80ef2ac5b2ad30df30cb44d7c460e590c564c8 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Sun, 23 Jul 2023 13:24:40 +0200
+Date: Sun, 23 Jul 2023 19:16:16 +0200
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |  43 +-
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 632 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 668 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -21,7 +21,7 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/standard/EntranceRoom.java   |  31 -
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 17 files changed, 699 insertions(+), 70 deletions(-)
+ 17 files changed, 735 insertions(+), 70 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -88,10 +88,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..b03deb876
+index 000000000..840a9be0a
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,632 @@
+@@ -0,0 +1,668 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -170,6 +170,10 @@ index 000000000..b03deb876
 +		public static boolean ignoreBlacklist;
 +		public static boolean useChallenges;
 +		public static int challenges;
++
++		public static boolean trueRandom;
++		public static boolean sequentialMode;
++		public static long startingSeed;
 +	}
 +
 +	public class HeapItem {
@@ -227,33 +231,43 @@ index 000000000..b03deb876
 +				//if no config is present, restore these values
 +				prop.setProperty("useChallenges", "true");
 +				prop.setProperty("ignoreBlacklist", "false");
++				prop.setProperty("trueRandomMode", "false");
++				prop.setProperty("sequentialMode", "false");
++				prop.setProperty("startingSeed", "0");
 +
 +				prop.setProperty("chal.hostileChampions", "false");
 +				prop.setProperty("chal.badderBosses", "false");
 +				prop.setProperty("chal.onDiet", "false");
 +				prop.setProperty("chal.faithIsMyArmor", "false");
-+				prop.setProperty("chal.Pharmacophobia", "false");
++				prop.setProperty("chal.pharmacophobia", "false");
 +				prop.setProperty("chal.barrenLand", "false");
 +				prop.setProperty("chal.swarmIntelligence", "false");
 +				prop.setProperty("chal.intoDarkness", "false");
 +				prop.setProperty("chal.forbiddenRunes", "false");
 +
 +				prop.store(output, null);
++
++				System.out.printf("\nERROR: no config file found. created " + fileName + "\n\n");
 +			} catch (IOException io) {
 +			}
 +		} catch (IOException ex) {
 +		}
 +
++		//pull options from config
 +		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
 +		Options.ignoreBlacklist = cfg.getProperty("ignoreBlacklist").equals("true");
++		Options.trueRandom = cfg.getProperty("trueRandomMode").equals("true");
++		Options.sequentialMode = cfg.getProperty("sequentialMode").equals("true");
++		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
 +
++		//build challenge code from config
 +		Options.challenges = 0;
 +		if (Options.useChallenges) {
 +			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true")	? Challenges.CHAMPION_ENEMIES : 0;
 +			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true")		? Challenges.STRONGER_BOSSES : 0;
 +			Options.challenges += cfg.getProperty("chal.onDiet").equals("true")				? Challenges.NO_FOOD : 0;
 +			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true")		? Challenges.NO_ARMOR : 0;
-+			Options.challenges += cfg.getProperty("chal.Pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
++			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
 +			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true")			? Challenges.NO_HERBALISM : 0;
 +			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")	? Challenges.SWARM_INTELLIGENCE : 0;
 +			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true")		? Challenges.DARKNESS : 0;
@@ -356,8 +370,8 @@ index 000000000..b03deb876
 +    public SeedFinder(String[] args) {
 +		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
 +
++		parseConfig("seedfinder.cfg");
 +		parseArgs(args);
-+		parseConfig("seedfinder.config");
 +
 +		if (args.length == 2) {
 +			logSeedItems(Long.toString(Options.seed), Options.floors);
@@ -375,11 +389,33 @@ index 000000000..b03deb876
 +		}
 +
 +
-+		String seedDigits = Integer.toString(Random.Int(542900));
-+		for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
-+			if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
-+				System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
-+				logSeedItems(seedDigits + Integer.toString(i), Options.floors);
++		//only generate natural seeds
++		if (Options.trueRandom) {
++			for (int i = 0; i < DungeonSeed.TOTAL_SEEDS; i++) {
++				long seed = DungeonSeed.randomSeed();
++				if (testSeed(Long.toString(seed), Options.floors)) {
++					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
++					logSeedItems(Long.toString(seed), Options.floors);
++				}
++			}
++
++		//sequential mode: start at 0
++		} else if (Options.sequentialMode) {
++			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
++				if (testSeed(Long.toString(i), Options.floors)) {
++					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
++					logSeedItems(Long.toString(i), Options.floors);
++				}
++			}
++
++		//default (random) mode
++		} else {
++			String seedDigits = Integer.toString(Random.Int(542900));
++			for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
++				if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
++					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
++					logSeedItems(seedDigits + Integer.toString(i), Options.floors);
++				}
 +			}
 +		}
 +	}
