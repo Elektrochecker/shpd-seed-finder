@@ -1,5 +1,7 @@
 package com.shatteredpixel.shatteredpixeldungeon;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -7,16 +9,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
-import java.text.DateFormat;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Properties;
+import java.util.Scanner;
 import java.util.TimeZone;
 
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
@@ -29,6 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
+import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
@@ -37,6 +40,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap.Type;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
+import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.CrystalKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.GoldenKey;
 import com.shatteredpixel.shatteredpixeldungeon.items.keys.IronKey;
@@ -52,7 +56,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
-import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
+
 import com.watabou.utils.Random;
 import com.watabou.noosa.Game;
 
@@ -68,6 +72,10 @@ public class SeedFinder {
 
 		public static boolean searchForDaily;
 		public static int DailyOffset;
+
+		public static boolean ignoreBlacklist;
+		public static boolean useChallenges;
+		public static int challenges;
 	}
 
 	public class HeapItem {
@@ -111,6 +119,52 @@ public class SeedFinder {
 
 		else
 			Options.ouputFile = args[3];
+	}
+
+	private void parseConfig(String fileName) {
+		Properties cfg = new Properties();
+
+		try (FileInputStream stream = new FileInputStream(fileName)) {
+			cfg.load(stream);
+		} catch (FileNotFoundException ex) {
+			try (OutputStream output = new FileOutputStream(fileName)) {
+				Properties prop = new Properties();
+	
+				//if no config is present, restore these values
+				prop.setProperty("useChallenges", "true");
+				prop.setProperty("ignoreBlacklist", "false");
+
+				prop.setProperty("chal.hostileChampions", "false");
+				prop.setProperty("chal.badderBosses", "false");
+				prop.setProperty("chal.onDiet", "false");
+				prop.setProperty("chal.faithIsMyArmor", "false");
+				prop.setProperty("chal.Pharmacophobia", "false");
+				prop.setProperty("chal.barrenLand", "false");
+				prop.setProperty("chal.swarmIntelligence", "false");
+				prop.setProperty("chal.intoDarkness", "false");
+				prop.setProperty("chal.forbiddenRunes", "false");
+
+				prop.store(output, null);
+			} catch (IOException io) {
+			}
+		} catch (IOException ex) {
+		}
+
+		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
+		Options.ignoreBlacklist = cfg.getProperty("ignoreBlacklist").equals("true");
+
+		Options.challenges = 0;
+		if (Options.useChallenges) {
+			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true")	? Challenges.CHAMPION_ENEMIES : 0;
+			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true")		? Challenges.STRONGER_BOSSES : 0;
+			Options.challenges += cfg.getProperty("chal.onDiet").equals("true")				? Challenges.NO_FOOD : 0;
+			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true")		? Challenges.NO_ARMOR : 0;
+			Options.challenges += cfg.getProperty("chal.Pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
+			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true")			? Challenges.NO_HERBALISM : 0;
+			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")	? Challenges.SWARM_INTELLIGENCE : 0;
+			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true")		? Challenges.DARKNESS : 0;
+			Options.challenges += cfg.getProperty("chal.forbiddenRunes").equals("true")		? Challenges.NO_SCROLLS : 0;
+		}
 	}
 
 	private ArrayList<String> getItemList() {
@@ -209,6 +263,7 @@ public class SeedFinder {
 		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
 
 		parseArgs(args);
+		parseConfig("seedfinder.config");
 
 		if (args.length == 2) {
 			logSeedItems(Long.toString(Options.seed), Options.floors);
@@ -275,6 +330,7 @@ public class SeedFinder {
 
 	private boolean testSeed(String seed, int floors) {
 		SPDSettings.customSeed(seed);
+		SPDSettings.challenges(Options.challenges);
 		GamesInProgress.selectedClass = HeroClass.WARRIOR;
 		Dungeon.init();
 
@@ -285,61 +341,63 @@ public class SeedFinder {
 			Level l = Dungeon.newLevel();
 
 			//skip boss floors
-			if (Dungeon.depth % 5 != 0) continue;
+			if (Dungeon.depth % 5 != 0) {
+				// continue;
+			}
 
-				ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
-				heaps.addAll(getMobDrops(l));
+			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
+			heaps.addAll(getMobDrops(l));
 
-				//check heap items
-				for (Heap h : heaps) {
-					for (Item item : h.items) {
-						item.identify();
+			//check heap items
+			for (Heap h : heaps) {
+				for (Item item : h.items) {
+					item.identify();
 
-						for (int j = 0; j < itemList.size(); j++) {
-							if (item.title().toLowerCase().contains(itemList.get(j))
-								|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
-								if (itemsFound[j] == false) {
-									itemsFound[j] = true;
-									break;
-								}
+					for (int j = 0; j < itemList.size(); j++) {
+						if (item.title().toLowerCase().contains(itemList.get(j))
+							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
+							if (itemsFound[j] == false) {
+								itemsFound[j] = true;
+								break;
 							}
 						}
 					}
 				}
+			}
 
-				//check sacrificial fire
-				if (l.sacrificialFireItem != null) {
-					for (int j = 0; j < itemList.size(); j++) {
-						if (l.sacrificialFireItem.title().toLowerCase().contains(itemList.get(j))) {
+			//check sacrificial fire
+			if (l.sacrificialFireItem != null) {
+				for (int j = 0; j < itemList.size(); j++) {
+					if (l.sacrificialFireItem.title().toLowerCase().contains(itemList.get(j))) {
+						if (!itemsFound[j]) {
+							itemsFound[j] = true;
+							break;
+						}
+					}
+				}
+			}
+
+			//check quests
+			Item[] questitems = {
+				Ghost.Quest.armor,
+				Ghost.Quest.weapon,
+				Wandmaker.Quest.wand1,
+				Wandmaker.Quest.wand2,
+				Imp.Quest.reward
+			};
+
+			if (Ghost.Quest.armor != null) {
+				questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
+				questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
+			}
+
+			for (int j = 0; j < itemList.size(); j++) {
+				for (int k = 0; k < 5; k++) {
+					if (questitems[k] != null) {
+						if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
 							if (!itemsFound[j]) {
 								itemsFound[j] = true;
 								break;
-							}
-					}
-				}
-
-				//check quests
-				Item[] questitems = {
-					Ghost.Quest.armor,
-					Ghost.Quest.weapon,
-					Wandmaker.Quest.wand1,
-					Wandmaker.Quest.wand2,
-					Imp.Quest.reward
-				};
-
-				if (Ghost.Quest.armor != null) {
-					questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
-					questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
-				}
-
-				for (int j = 0; j < itemList.size(); j++) {
-					for (int k = 0; k < 5; k++) {
-						if (questitems[k] != null) {
-							if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
-								if (!itemsFound[j]) {
-									itemsFound[j] = true;
-									break;
-								}
 							}
 						}
 					}
@@ -388,6 +446,7 @@ public class SeedFinder {
 			long DAY = 1000 * 60 * 60 * 24;
 			long currentDay = (long) Math.floor(Game.realTime/DAY) + Options.DailyOffset;
 			SPDSettings.lastDaily(DAY * currentDay);
+			SPDSettings.challenges(Options.challenges);
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
 			format.setTimeZone(TimeZone.getTimeZone("UTC"));
 			
@@ -399,7 +458,7 @@ public class SeedFinder {
 		} else {
 			Dungeon.daily = false;
 			SPDSettings.customSeed(seed);
-
+			SPDSettings.challenges(Options.challenges);
 			GamesInProgress.selectedClass = HeroClass.WARRIOR;
 			Dungeon.init();
 			seedinfotext += DungeonSeed.convertToCode(Dungeon.seed);
@@ -410,8 +469,12 @@ public class SeedFinder {
 		
 		
 
-		blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
+		if (!Options.ignoreBlacklist) {
+			blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
 								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
+		} else {
+			blacklist = Arrays.asList();
+		}
 		
 
 		for (int i = 0; i < floors; i++) {
