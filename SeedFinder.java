@@ -13,6 +13,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +32,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Statue;
-import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
@@ -55,13 +55,16 @@ import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+import com.shatteredpixel.shatteredpixeldungeon.levels.RegularLevel;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 
 import com.watabou.utils.Random;
 import com.watabou.noosa.Game;
 
 public class SeedFinder {
-	enum Condition {ANY, ALL};
+	enum Condition {
+		ANY, ALL
+	};
 
 	public static class Options {
 		public static int floors;
@@ -76,6 +79,8 @@ public class SeedFinder {
 		public static boolean ignoreBlacklist;
 		public static boolean useChallenges;
 		public static int challenges;
+
+		public static boolean useRooms;
 
 		public static boolean trueRandom;
 		public static boolean sequentialMode;
@@ -108,10 +113,10 @@ public class SeedFinder {
 				if (offsetNumber != "") {
 					Options.DailyOffset = Integer.valueOf(offsetNumber);
 				}
-				
+
 			}
 
-			return;			
+			return;
 		}
 
 		Options.floors = Integer.parseInt(args[0]);
@@ -133,9 +138,10 @@ public class SeedFinder {
 		} catch (FileNotFoundException ex) {
 			try (OutputStream output = new FileOutputStream(fileName)) {
 				Properties prop = new Properties();
-	
-				//if no config is present, restore these values
+
+				// if no config is present, restore these values
 				prop.setProperty("useChallenges", "true");
+				prop.setProperty("useRooms", "false");
 				prop.setProperty("ignoreBlacklist", "false");
 				prop.setProperty("trueRandomMode", "false");
 				prop.setProperty("sequentialMode", "false");
@@ -159,25 +165,29 @@ public class SeedFinder {
 		} catch (IOException ex) {
 		}
 
-		//pull options from config
+		// pull options from config
 		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
+		Options.useRooms = cfg.getProperty("useRooms").equals("true");
 		Options.ignoreBlacklist = cfg.getProperty("ignoreBlacklist").equals("true");
 		Options.trueRandom = cfg.getProperty("trueRandomMode").equals("true");
 		Options.sequentialMode = cfg.getProperty("sequentialMode").equals("true");
 		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
 
-		//build challenge code from config
+		// build challenge code from config
 		Options.challenges = 0;
 		if (Options.useChallenges) {
-			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true")	? Challenges.CHAMPION_ENEMIES : 0;
-			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true")		? Challenges.STRONGER_BOSSES : 0;
-			Options.challenges += cfg.getProperty("chal.onDiet").equals("true")				? Challenges.NO_FOOD : 0;
-			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true")		? Challenges.NO_ARMOR : 0;
-			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true")		? Challenges.NO_HEALING : 0;
-			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true")			? Challenges.NO_HERBALISM : 0;
-			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")	? Challenges.SWARM_INTELLIGENCE : 0;
-			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true")		? Challenges.DARKNESS : 0;
-			Options.challenges += cfg.getProperty("chal.forbiddenRunes").equals("true")		? Challenges.NO_SCROLLS : 0;
+			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true") ? Challenges.CHAMPION_ENEMIES
+					: 0;
+			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true") ? Challenges.STRONGER_BOSSES : 0;
+			Options.challenges += cfg.getProperty("chal.onDiet").equals("true") ? Challenges.NO_FOOD : 0;
+			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true") ? Challenges.NO_ARMOR : 0;
+			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true") ? Challenges.NO_HEALING : 0;
+			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true") ? Challenges.NO_HERBALISM : 0;
+			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")
+					? Challenges.SWARM_INTELLIGENCE
+					: 0;
+			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true") ? Challenges.DARKNESS : 0;
+			Options.challenges += cfg.getProperty("chal.forbiddenRunes").equals("true") ? Challenges.NO_SCROLLS : 0;
 		}
 	}
 
@@ -210,7 +220,9 @@ public class SeedFinder {
 
 				String cursed = "";
 
-				if  (((i instanceof Armor && ((Armor) i).hasGoodGlyph()) || (i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || (i instanceof Wand) || (i instanceof Artifact)) && i.cursed) {
+				if (((i instanceof Armor && ((Armor) i).hasGoodGlyph())
+						|| (i instanceof Weapon && ((Weapon) i).hasGoodEnchant()) || (i instanceof Wand)
+						|| (i instanceof Artifact)) && i.cursed) {
 
 					cursed = "cursed ";
 				}
@@ -218,36 +230,37 @@ public class SeedFinder {
 				if (i instanceof Scroll || i instanceof Potion || i instanceof Ring) {
 					int txtLength = i.title().length();
 
-					if(i.cursed) {
+					if (i.cursed) {
 						builder.append("- cursed ");
 						txtLength += 7;
 					} else {
 						builder.append("- ");
 					}
 
-					//make anonymous names show in the same column to look nice
+					// make anonymous names show in the same column to look nice
 					String tabstring = "";
 					for (int j = 0; j < Math.max(1, 33 - txtLength); j++) {
 						tabstring += " ";
 					}
 
-					builder.append(i.title().toLowerCase() + tabstring); //item
-					builder.append(i.anonymousName().toLowerCase().replace(" potion", "").replace("scroll of ", "").replace(" ring", "")); //color, rune or gem
+					builder.append(i.title().toLowerCase() + tabstring); // item
+					builder.append(i.anonymousName().toLowerCase().replace(" potion", "").replace("scroll of ", "")
+							.replace(" ring", "")); // color, rune or gem
 
-					//if both location and type are logged only space to the right once
+					// if both location and type are logged only space to the right once
 					if (h.type != Type.HEAP) {
 						builder.append(" (" + h.title().toLowerCase() + ")");
 					}
 				} else {
-					builder.append("- "+ cursed + i.title().toLowerCase());
+					builder.append("- " + cursed + i.title().toLowerCase());
 
-					//also make item location log in the same column
+					// also make item location log in the same column
 					if (h.type != Type.HEAP) {
 						for (int j = 0; j < 33 - i.title().length() - cursed.length(); j++) {
 							builder.append(" ");
 						}
 
-					builder.append("(" + h.title().toLowerCase() + ")");
+						builder.append("(" + h.title().toLowerCase() + ")");
 					}
 				}
 				builder.append("\n");
@@ -273,7 +286,7 @@ public class SeedFinder {
 		}
 	}
 
-    public SeedFinder(String[] args) {
+	public SeedFinder(String[] args) {
 		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
 
 		parseConfig("seedfinder.cfg");
@@ -294,36 +307,61 @@ public class SeedFinder {
 			e.printStackTrace();
 		}
 
-
-		//only generate natural seeds
+		// only generate natural seeds
 		if (Options.trueRandom) {
 			for (int i = 0; i < DungeonSeed.TOTAL_SEEDS; i++) {
 				long seed = DungeonSeed.randomSeed();
 				if (testSeed(Long.toString(seed), Options.floors)) {
-					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
+							Dungeon.seed);
 					logSeedItems(Long.toString(seed), Options.floors);
 				}
 			}
 
-		//sequential mode: start at 0
+			// sequential mode: start at 0
 		} else if (Options.sequentialMode) {
 			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
 				if (testSeed(Long.toString(i), Options.floors)) {
-					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
+							Dungeon.seed);
 					logSeedItems(Long.toString(i), Options.floors);
 				}
 			}
 
-		//default (random) mode
+			// default (random) mode
 		} else {
 			String seedDigits = Integer.toString(Random.Int(542900));
 			for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
 				if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
-					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
+							Dungeon.seed);
 					logSeedItems(seedDigits + Integer.toString(i), Options.floors);
 				}
 			}
 		}
+	}
+
+	private ArrayList<String> getRooms() {
+		ArrayList<String> rooms = new ArrayList<String>();
+		for (int k = 0; k < RegularLevel.roomList.size(); k++) {
+			String room = RegularLevel.roomList.get(k).toString()
+					.replace("com.shatteredpixel.shatteredpixeldungeon.levels.rooms.", "");
+			room = room.replace("standard.", "");
+			room = room.replaceAll("@[a-z0-9]{4,}", "");
+
+			if (room.contains("special"))
+				room = room.replace("special.", "") + " (special)";
+			if (room.contains("secret"))
+				room = room.replace("secret.", "") + " (secret)";
+
+			//turn camel case to normal text
+			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+
+			rooms.add(room);
+		}
+
+		Collections.sort(rooms);
+		return rooms;
 	}
 
 	private ArrayList<Heap> getMobDrops(Level l) {
@@ -354,9 +392,12 @@ public class SeedFinder {
 				for (Item item : ((Mimic) m).items)
 					h.items.add(item.identify());
 
-				if (m instanceof GoldenMimic) h.type = Type.GOLDEN_MIMIC;
-				else if (m instanceof CrystalMimic) h.type = Type.CRYSTAL_MIMIC;
-				else h.type = Type.MIMIC;
+				if (m instanceof GoldenMimic)
+					h.type = Type.GOLDEN_MIMIC;
+				else if (m instanceof CrystalMimic)
+					h.type = Type.CRYSTAL_MIMIC;
+				else
+					h.type = Type.MIMIC;
 				heaps.add(h);
 			}
 		}
@@ -376,22 +417,39 @@ public class SeedFinder {
 
 			Level l = Dungeon.newLevel();
 
-			//skip boss floors
-			if (Dungeon.depth % 5 != 0) {
-				// continue;
+			// skip boss floors
+			if (Dungeon.depth % 5 == 0) {
+				continue;
 			}
 
 			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
 			heaps.addAll(getMobDrops(l));
 
-			//check heap items
+			// check rooms
+			if (Options.useRooms) {
+				ArrayList<String> rooms = getRooms();
+				if (rooms.size() > 0) {
+					for (int k = 0; k < rooms.size(); k++) {
+						for (int j = 0; j < itemList.size(); j++) {
+							if (rooms.get(k).contains(itemList.get(j))) {
+								if (!itemsFound[j]) {
+									itemsFound[j] = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// check heap items
 			for (Heap h : heaps) {
 				for (Item item : h.items) {
 					item.identify();
 
 					for (int j = 0; j < itemList.size(); j++) {
 						if (item.title().toLowerCase().contains(itemList.get(j))
-							|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
+								|| item.anonymousName().toLowerCase().contains(itemList.get(j))) {
 							if (itemsFound[j] == false) {
 								itemsFound[j] = true;
 								break;
@@ -401,7 +459,7 @@ public class SeedFinder {
 				}
 			}
 
-			//check sacrificial fire
+			// check sacrificial fire
 			if (l.sacrificialFireItem != null) {
 				for (int j = 0; j < itemList.size(); j++) {
 					if (l.sacrificialFireItem.title().toLowerCase().contains(itemList.get(j))) {
@@ -413,13 +471,13 @@ public class SeedFinder {
 				}
 			}
 
-			//check quests
+			// check quests
 			Item[] questitems = {
-				Ghost.Quest.armor,
-				Ghost.Quest.weapon,
-				Wandmaker.Quest.wand1,
-				Wandmaker.Quest.wand2,
-				Imp.Quest.reward
+					Ghost.Quest.armor,
+					Ghost.Quest.weapon,
+					Wandmaker.Quest.wand1,
+					Wandmaker.Quest.wand2,
+					Imp.Quest.reward
 			};
 
 			if (Ghost.Quest.armor != null) {
@@ -474,18 +532,18 @@ public class SeedFinder {
 		} catch (FileNotFoundException e) { // gotta love Java mandatory exceptions
 			e.printStackTrace();
 		}
-		
+
 		String seedinfotext = "";
 
 		if (Options.searchForDaily) {
 			Dungeon.daily = true;
 			long DAY = 1000 * 60 * 60 * 24;
-			long currentDay = (long) Math.floor(Game.realTime/DAY) + Options.DailyOffset;
+			long currentDay = (long) Math.floor(Game.realTime / DAY) + Options.DailyOffset;
 			SPDSettings.lastDaily(DAY * currentDay);
 			SPDSettings.challenges(Options.challenges);
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
 			format.setTimeZone(TimeZone.getTimeZone("UTC"));
-			
+
 			GamesInProgress.selectedClass = HeroClass.WARRIOR;
 			Dungeon.init();
 			seedinfotext += format.format(new Date(SPDSettings.lastDaily()));
@@ -502,16 +560,13 @@ public class SeedFinder {
 			out.printf("Items for seed %s (%d):\n\n", seedinfotext, Dungeon.seed);
 		}
 
-		
-		
-
 		if (!Options.ignoreBlacklist) {
-			blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class, EnergyCrystal.class,
-								  CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
+			blacklist = Arrays.asList(Gold.class, Dewdrop.class, IronKey.class, GoldenKey.class, CrystalKey.class,
+					EnergyCrystal.class,
+					CorpseDust.class, Embers.class, CeremonialCandle.class, Pickaxe.class, Guidebook.class);
 		} else {
 			blacklist = Arrays.asList();
 		}
-		
 
 		for (int i = 0; i < floors; i++) {
 
@@ -561,25 +616,37 @@ public class SeedFinder {
 				case 5:
 					feeling = "goo";
 					break;
-				
+
 				case 10:
 					feeling = "tengu";
 					break;
-				
+
 				case 15:
 					feeling = "DM-300";
 					break;
-				
+
 				case 20:
 					feeling = "dwarven king";
 					break;
-				
+
 				case 25:
 					feeling = "yog dzewa";
 					break;
 			}
 
 			out.printf(feeling + "\n\n");
+
+			// list all rooms of level
+			if (Dungeon.depth % 5 != 0 && Dungeon.depth < 26 && Options.useRooms) {
+				ArrayList<String> rooms = getRooms();
+				out.printf("Rooms: \n");
+
+				for (int k = 0; k < rooms.size(); k++) {
+					out.printf("- " + rooms.get(k) + "\n");
+				}
+
+				out.printf("\n");
+			}
 
 			// list quest rewards
 			if (Ghost.Quest.armor != null) {
@@ -600,7 +667,8 @@ public class SeedFinder {
 				builder.append("Wandmaker quest item: ");
 
 				switch (Wandmaker.Quest.type) {
-					case 1: default:
+					case 1:
+					default:
 						builder.append("corpse dust\n\n");
 						break;
 					case 2:
@@ -621,7 +689,7 @@ public class SeedFinder {
 				addTextQuest("Imp quest reward", rewards, builder);
 			}
 
-			//sacrificial fire
+			// sacrificial fire
 			if (l.sacrificialFireItem != null) {
 				Item fireItem = l.sacrificialFireItem.identify();
 
@@ -637,16 +705,24 @@ public class SeedFinder {
 				for (Item item : h.items) {
 					item.identify();
 
-					if (h.type == Type.FOR_SALE) continue;
-					else if (blacklist.contains(item.getClass())) continue;
-					else if (item instanceof Scroll) scrolls.add(new HeapItem(item, h));
-					else if (item instanceof Potion) potions.add(new HeapItem(item, h));
-					else if (item instanceof MeleeWeapon || item instanceof Armor) equipment.add(new HeapItem(item, h));
-					else if (item instanceof Ring) rings.add(new HeapItem(item, h));
-					else if (item instanceof Wand) wands.add(new HeapItem(item, h));
+					if (h.type == Type.FOR_SALE)
+						continue;
+					else if (blacklist.contains(item.getClass()))
+						continue;
+					else if (item instanceof Scroll)
+						scrolls.add(new HeapItem(item, h));
+					else if (item instanceof Potion)
+						potions.add(new HeapItem(item, h));
+					else if (item instanceof MeleeWeapon || item instanceof Armor)
+						equipment.add(new HeapItem(item, h));
+					else if (item instanceof Ring)
+						rings.add(new HeapItem(item, h));
+					else if (item instanceof Wand)
+						wands.add(new HeapItem(item, h));
 					else if (item instanceof Artifact) {
-						 artifacts.add(new HeapItem(item, h));
-					} else others.add(new HeapItem(item, h));
+						artifacts.add(new HeapItem(item, h));
+					} else
+						others.add(new HeapItem(item, h));
 				}
 			}
 
@@ -664,5 +740,5 @@ public class SeedFinder {
 		}
 
 		out.close();
-    }
+	}
 }
