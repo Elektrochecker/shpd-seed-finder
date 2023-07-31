@@ -7,62 +7,80 @@ In this repository I will contribute to Shattered Pixel Dungeon v2.0.0 and above
 
 # How to use
 
-Download a precompiled .jar from the releases tab or build your own using the instructions below.
+## setup
+- obtain a copy of the newest version of the seedfinder. It can be downloaded as a zip from the [releases tab](https://github.com/Elektrochecker/shpd-seed-finder/releases).
 
-## Seed display mode
-### seeded runs
+[Older versions](https://www.reddit.com/r/PixelDungeon/comments/13bpjv4/how_to_use_alessiomarottas_seedfinder_for/) might only offer the .jar file as a download.
 
-If no more than two arguments are provided, the items found in a given seed will be printed on the screen:
+![downloading the seedfinder](https://lemmy.world/pictrs/image/f4ddd9a4-a372-4831-8b71-f081d6568564.png)
 
+- make sure Java is installed on your device
+- if you want to use the multithreading script, [nodejs](https://nodejs.org/en) must also be installed
+- (optional) Visual studio code to make the Use of the seedfinder more convenient
+
+Extract the zip archive (or place the jar file in an empty folder). This Folder will be the working directory for the seedfinder.
+
+In order to use the seedfinder, commands must be executed in the directory of the seedfinder. Open a command prompt as follows:
+- vscode installed: open the folder in vscode and launch an integrated terminal
+- windows: hold `shift `and right-click your folder. choose `open a powershell window here`.
+- linux: linux users know how to open a termial
+- apple: please google how to open a terminal on your OS
+
+Commands can be executed by typing them in this window and pressing `Enter`. You can test your Java installation by running the following command:
+```
+java -version
+```
+
+## scouting seeds
+Search items for a known dungeon seed by running the following command(s):
+
+#### seeded runs
 ```
 java -jar seed-finder.jar <floors> <seed>
 ```
+where `<floors>` is the number of floors to scan and `<seed>` is the seed to scan.
 
-- **floors**: maximum depth to display
-- **seed**: dungeon seed to analyze
+example: `java -jar seed-finder.jar 4 SEE-EEE-EED`
 
-### daily runs
-
-syntax 
+#### daily runs
 ```
 java -jar seed-finder.jar <floors> daily<offset>
 ```
-where `<offset>` is an integer preceded by either `+` or `-`
+where `<floors>` is the number of floors to scan and `<offset>` is an integer preceded by `+` or `-`.
 
 examples:
 
-- todays daily:       `java -jar seed-finder.jar 24 daily`
-- yesterdays daily:   `java -jar seed-finder.jar 24 daily-1`
-- tomorrows daily:    `java -jar seed-finder.jar 24 daily+1`
-- last weeks daily:   `java -jar seed-finder.jar 24 daily-7`
+- todays daily:         `java -jar seed-finder.jar 24 daily`
+- yesterdays daily:     `java -jar seed-finder.jar 24 daily-1`
+- tomorrows daily:      `java -jar seed-finder.jar 24 daily+1`
+- last weeks daily:     `java -jar seed-finder.jar 24 daily-7`
 
-## Finder mode
+## finding seeds
+Using the seedfinder to generate specific seeds:
+- create a new text file in your directoy (in this example called `seeditems.txt`). It will contain a list of items the seedfinder should search for.
+- edit your item textfile and put in the items you are looking for. Make a new line for every item. Make sure that every item is spelled correctly (for example assassin's blade instead of assassins blade).
 
-If al least 3 arguments are provided, the application will try to find a specific seed:
-
+Open your terminal and start the seedfinder using the following command:
 ```
-java -jar seed-finder.jar <floors> <condition> <item_list> [output_file]
+java -jar seed-finder.jar <floors> <mode> <item file name> [output file name]
 ```
+where `<floors>` is the number of floors to scan, and  `<mode>` is either:
+- `any` (find seeds that contain any one of the specified items)
+- `all` (find seeds that contain all of the specified items).
 
-- **floors**: maximum depth to look for the items
-- **condition**: can be either `any` or `all`: the first will consider a seed valid if any of the specified items has been found, the second one requires _all_ of the items to spawn instead
-- **item_list**: file name containing a list of items, one item per line
-- **output_file**: file name to save the item list for each seed, if unspecified it will be set to `out.txt`
+When seeds are found they will be saved to `out.txt` or, if specified, your custom output file. Depending on the complexity of your item list, seeds will be found quickly, slowly or be near impossible to generate.
 
-The entries in the item list need to be in english, all lowercase and can optionally specify the enchantement and the upgrade level, so both `projecting crossbow +3` and `sword` are valid item names.
+## configuration
+Many features such as challenges and seed generation setting can be changed by editing the `seedfinder.cfg` file.
 
-The application will run until all the seeds have been tested by default (virtually indefinitely), so stop it using ctrl-C when you have found enough seeds for your needs.
+Some challenges might change level generation (most notably `forbidden runes`), therefore i provide options to turn them on or off.
 
-Any valid seeds will be printed during the execution in the 9 letter code and numeric format.
-
-## Multithreading
-
-The nodejs script can be used to start and control multiple seedfinders simultaneously. In order to use the script [nodejs](https://nodejs.org/en) must be installed. No NPM packages are required.
-
-Syntax: ` node . <floor> <mode> <seed item file> <number of processes (optional)> `
-
-This will start a number of seedfinders equal the provided argument (4 if left blank).
-By default "seed-finder-random.jar" is the targeted seedfinder. This can be changed by editing the script, but there would be no point using it to run the sequential version.
+## the multithreading script a.k.a. turbo mode
+Using the script to start and control multiple seedfinders simultaneously will greatly increase generation speed, especially for beefy computers. Usage is similar to the seed finding mode. Syntax:
+```
+node . <floor> <mode> <seed item file> [number of processes]
+```
+This will start a number of seedfinders equal the provided argument (4 if left blank).  Make sure that sequential mode is disabled in the config file, there would be no point using it with multiple seedfinders. Don't overdo it with the number of seedfinders, since the program will take all the resources it can.
 
 # How to build
 
@@ -72,17 +90,13 @@ By default "seed-finder-random.jar" is the targeted seedfinder. This can be chan
 git clone https://github.com/00-Evan/shattered-pixel-dungeon
 ```
 
-2. Download the patch into the local repository. If you use Windows open the URL below and save it.
+2. Download the patch (changes.patch) into the local repository.
 
-```
-wget "https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/changes.patch"
-```
 
 3. Apply the patch to the repository.
 
 ```
-cd shattered-pixel-dungeon
-git apply ../changes.patch
+git apply changes.patch
 ```
 
 4. Compile the application with the following command:
