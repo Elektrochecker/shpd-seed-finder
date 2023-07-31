@@ -2,8 +2,8 @@ const os = require("os");
 const fs = require('fs');
 const { exec } = require('child_process');
 
-let seedFinderPath = "seed-finder-random.jar"
-const seedFinderPathAlternate = "seed-finder.jar"
+let seedFinderPath = "seed-finder.jar"
+const seedFinderPathAlternate = "seed-finder-random.jar"
 const seedFileName = "seedsFound.txt"
 const seedListFileName = "seedList.txt"
 
@@ -73,7 +73,7 @@ let exit = () => {
                 fs.readFile(itemFile, "utf8", (err, items) => {
                     if (err) { console.error(err) }
 
-                    let seedsToSave = items.replace("\n", ", ") + "\n";
+                    let seedsToSave = items + "\n";
 
                     seeds.forEach(seed => seedsToSave += "\n" + seed);
 

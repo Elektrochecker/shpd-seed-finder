@@ -81,10 +81,18 @@ public class SeedFinder {
 		public static int challenges;
 
 		public static boolean useRooms;
+		public static boolean logPotions;
+		public static boolean logScrolls;
+		public static boolean logEquipment;
+		public static boolean logRings;
+		public static boolean logWands;
+		public static boolean logArtifacts;
+		public static boolean logOther;
 
 		public static boolean trueRandom;
 		public static boolean sequentialMode;
 		public static long startingSeed;
+		public static int infoSpacing;
 	}
 
 	public class HeapItem {
@@ -141,11 +149,20 @@ public class SeedFinder {
 
 				// if no config is present, restore these values
 				prop.setProperty("useChallenges", "true");
-				prop.setProperty("useRooms", "false");
 				prop.setProperty("ignoreBlacklist", "false");
 				prop.setProperty("trueRandomMode", "false");
 				prop.setProperty("sequentialMode", "false");
 				prop.setProperty("startingSeed", "0");
+				prop.setProperty("useRooms", "false");
+				prop.setProperty("logPotions", "true");
+				prop.setProperty("logScrolls", "true");
+				prop.setProperty("logEquipment", "true");
+				prop.setProperty("logRings", "true");
+				prop.setProperty("logWands", "true");
+				prop.setProperty("logArtifacts", "true");
+				prop.setProperty("logOther", "true");
+				
+				prop.setProperty("infoSpacing", "33");
 
 				prop.setProperty("chal.hostileChampions", "false");
 				prop.setProperty("chal.badderBosses", "false");
@@ -168,24 +185,29 @@ public class SeedFinder {
 		// pull options from config
 		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
 		Options.useRooms = cfg.getProperty("useRooms").equals("true");
+		Options.logPotions = cfg.getProperty("logPotions").equals("true");
+		Options.logScrolls = cfg.getProperty("logScrolls").equals("true");
+		Options.logEquipment = cfg.getProperty("logEquipment").equals("true");
+		Options.logRings = cfg.getProperty("logRings").equals("true");
+		Options.logWands = cfg.getProperty("logWands").equals("true");
+		Options.logArtifacts = cfg.getProperty("logArtifacts").equals("true");
+		Options.logOther = cfg.getProperty("logOther").equals("true");
 		Options.ignoreBlacklist = cfg.getProperty("ignoreBlacklist").equals("true");
 		Options.trueRandom = cfg.getProperty("trueRandomMode").equals("true");
 		Options.sequentialMode = cfg.getProperty("sequentialMode").equals("true");
 		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
+		Options.infoSpacing = Integer.valueOf(cfg.getProperty("infoSpacing"));
 
 		// build challenge code from config
 		Options.challenges = 0;
 		if (Options.useChallenges) {
-			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true") ? Challenges.CHAMPION_ENEMIES
-					: 0;
+			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true") ? Challenges.CHAMPION_ENEMIES : 0;
 			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true") ? Challenges.STRONGER_BOSSES : 0;
 			Options.challenges += cfg.getProperty("chal.onDiet").equals("true") ? Challenges.NO_FOOD : 0;
 			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true") ? Challenges.NO_ARMOR : 0;
 			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true") ? Challenges.NO_HEALING : 0;
 			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true") ? Challenges.NO_HERBALISM : 0;
-			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")
-					? Challenges.SWARM_INTELLIGENCE
-					: 0;
+			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true") ? Challenges.SWARM_INTELLIGENCE : 0;
 			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true") ? Challenges.DARKNESS : 0;
 			Options.challenges += cfg.getProperty("chal.forbiddenRunes").equals("true") ? Challenges.NO_SCROLLS : 0;
 		}
@@ -210,7 +232,7 @@ public class SeedFinder {
 		return itemList;
 	}
 
-	private void addTextItems(String caption, ArrayList<HeapItem> items, StringBuilder builder) {
+	private void addTextItems(String caption, ArrayList<HeapItem> items, StringBuilder builder, String padding) {
 		if (!items.isEmpty()) {
 			builder.append(caption + ":\n");
 
@@ -239,7 +261,7 @@ public class SeedFinder {
 
 					// make anonymous names show in the same column to look nice
 					String tabstring = "";
-					for (int j = 0; j < Math.max(1, 33 - txtLength); j++) {
+					for (int j = 0; j < Math.max(1, Options.infoSpacing - txtLength); j++) {
 						tabstring += " ";
 					}
 
@@ -256,7 +278,7 @@ public class SeedFinder {
 
 					// also make item location log in the same column
 					if (h.type != Type.HEAP) {
-						for (int j = 0; j < 33 - i.title().length() - cursed.length(); j++) {
+						for (int j = 0; j < Options.infoSpacing - i.title().length() - cursed.length(); j++) {
 							builder.append(" ");
 						}
 
@@ -266,7 +288,7 @@ public class SeedFinder {
 				builder.append("\n");
 			}
 
-			builder.append("\n");
+			builder.append(padding);
 		}
 	}
 
@@ -354,7 +376,7 @@ public class SeedFinder {
 			if (room.contains("secret"))
 				room = room.replace("secret.", "") + " (secret)";
 
-			//turn camel case to normal text
+			// turn camel case to normal text
 			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
 
 			rooms.add(room);
@@ -689,15 +711,6 @@ public class SeedFinder {
 				addTextQuest("Imp quest reward", rewards, builder);
 			}
 
-			// sacrificial fire
-			if (l.sacrificialFireItem != null) {
-				Item fireItem = l.sacrificialFireItem.identify();
-
-				builder.append("- " + fireItem.title().toLowerCase() + " (sacrificial fire)");
-
-				builder.append("\n\n");
-			}
-
 			heaps.addAll(getMobDrops(l));
 
 			// list items
@@ -726,13 +739,30 @@ public class SeedFinder {
 				}
 			}
 
-			addTextItems("Equipment", equipment, builder);
-			addTextItems("Scrolls", scrolls, builder);
-			addTextItems("Potions", potions, builder);
-			addTextItems("Rings", rings, builder);
-			addTextItems("Artifacts", artifacts, builder);
-			addTextItems("Wands", wands, builder);
-			addTextItems("Other", others, builder);
+			if (Options.logEquipment) {
+				addTextItems("Equipment", equipment, builder, "");
+
+				// sacrificial fire
+				if (l.sacrificialFireItem != null) {
+					Item fireItem = l.sacrificialFireItem.identify();
+
+					String tabstring = "";
+					for (int j = 0; j < Math.max(1,
+							Options.infoSpacing - fireItem.title().toLowerCase().length()); j++) {
+						tabstring += " ";
+					}
+
+					builder.append("- " + fireItem.title().toLowerCase() + tabstring + "(sacrificial fire)");
+					builder.append("\n\n");
+				}
+			}
+
+			if (Options.logScrolls) 	addTextItems("Scrolls", scrolls, builder, "\n");
+			if (Options.logPotions) 	addTextItems("Potions", potions, builder, "\n");
+			if (Options.logRings) 		addTextItems("Rings", rings, builder, "\n");
+			if (Options.logWands) 		addTextItems("Wands", wands, builder, "\n");
+			if (Options.logArtifacts) 	addTextItems("Artifacts", artifacts, builder, "\n");
+			if (Options.logOther) 		addTextItems("Other", others, builder, "\n");
 
 			out.print(builder.toString());
 

@@ -16,12 +16,10 @@ In this repository I will contribute to Shattered Pixel Dungeon v2.0.0 and above
 
 - make sure Java is installed on your device
 - if you want to use the multithreading script, [nodejs](https://nodejs.org/en) must also be installed
-- (optional) Visual studio code to make the Use of the seedfinder more convenient
 
 Extract the zip archive (or place the jar file in an empty folder). This Folder will be the working directory for the seedfinder.
 
 In order to use the seedfinder, commands must be executed in the directory of the seedfinder. Open a command prompt as follows:
-- vscode installed: open the folder in vscode and launch an integrated terminal
 - windows: hold `shift `and right-click your folder. choose `open a powershell window here`.
 - linux: linux users know how to open a termial
 - apple: please google how to open a terminal on your OS
