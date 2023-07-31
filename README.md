@@ -8,12 +8,7 @@ In this repository I will contribute to Shattered Pixel Dungeon v2.0.0 and above
 # How to use
 
 ## setup
-- obtain a copy of the newest version of the seedfinder. It can be downloaded as a zip from the [releases tab](https://github.com/Elektrochecker/shpd-seed-finder/releases).
-
-[Older versions](https://www.reddit.com/r/PixelDungeon/comments/13bpjv4/how_to_use_alessiomarottas_seedfinder_for/) might only offer the .jar file as a download.
-
-![downloading the seedfinder](https://lemmy.world/pictrs/image/f4ddd9a4-a372-4831-8b71-f081d6568564.png)
-
+- obtain a copy of the newest version of the seedfinder. It can be downloaded as a zip from the [releases tab](https://github.com/Elektrochecker/shpd-seed-finder/releases). Older versions might only offer the .jar file as a download.
 - make sure Java is installed on your device
 - if you want to use the multithreading script, [nodejs](https://nodejs.org/en) must also be installed
 
