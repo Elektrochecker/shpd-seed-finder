@@ -93,6 +93,7 @@ public class SeedFinder {
 		public static boolean sequentialMode;
 		public static long startingSeed;
 		public static int infoSpacing;
+		public static String spacingChar;
 	}
 
 	public class HeapItem {
@@ -118,7 +119,7 @@ public class SeedFinder {
 				Options.searchForDaily = true;
 				String offsetNumber = args[1].replace("daily", "");
 
-				if (offsetNumber != "") {
+				if (!offsetNumber.equals("")) {
 					Options.DailyOffset = Integer.valueOf(offsetNumber);
 				}
 
@@ -152,7 +153,6 @@ public class SeedFinder {
 				prop.setProperty("ignoreBlacklist", "false");
 				prop.setProperty("trueRandomMode", "false");
 				prop.setProperty("sequentialMode", "false");
-				prop.setProperty("startingSeed", "0");
 				prop.setProperty("useRooms", "false");
 				prop.setProperty("logPotions", "true");
 				prop.setProperty("logScrolls", "true");
@@ -161,8 +161,10 @@ public class SeedFinder {
 				prop.setProperty("logWands", "true");
 				prop.setProperty("logArtifacts", "true");
 				prop.setProperty("logOther", "true");
-				
+
+				prop.setProperty("startingSeed", "0");
 				prop.setProperty("infoSpacing", "33");
+				prop.setProperty("spacingChar", "33");
 
 				prop.setProperty("chal.hostileChampions", "false");
 				prop.setProperty("chal.badderBosses", "false");
@@ -197,6 +199,8 @@ public class SeedFinder {
 		Options.sequentialMode = cfg.getProperty("sequentialMode").equals("true");
 		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
 		Options.infoSpacing = Integer.valueOf(cfg.getProperty("infoSpacing"));
+		Options.spacingChar = cfg.getProperty("spacingChar");
+		if (Options.spacingChar.length() != 1) Options.spacingChar = " ";
 
 		// build challenge code from config
 		Options.challenges = 0;
@@ -262,7 +266,7 @@ public class SeedFinder {
 					// make anonymous names show in the same column to look nice
 					String tabstring = "";
 					for (int j = 0; j < Math.max(1, Options.infoSpacing - txtLength); j++) {
-						tabstring += " ";
+						tabstring += Options.spacingChar;
 					}
 
 					builder.append(i.title().toLowerCase() + tabstring); // item
@@ -274,15 +278,17 @@ public class SeedFinder {
 						builder.append(" (" + h.title().toLowerCase() + ")");
 					}
 				} else {
-					builder.append("- " + cursed + i.title().toLowerCase());
+					String name = cursed + i.title().toLowerCase();
+					builder.append("- " + name);
 
 					// also make item location log in the same column
 					if (h.type != Type.HEAP) {
-						for (int j = 0; j < Options.infoSpacing - i.title().length() - cursed.length(); j++) {
-							builder.append(" ");
+						String tabstring = "";
+						for (int j = 0; j < Math.max(1, Options.infoSpacing - name.length()); j++) {
+							tabstring += Options.spacingChar;
 						}
 
-						builder.append("(" + h.title().toLowerCase() + ")");
+						builder.append(tabstring + "(" + h.title().toLowerCase() + ")");
 					}
 				}
 				builder.append("\n");
@@ -371,13 +377,33 @@ public class SeedFinder {
 			room = room.replace("standard.", "");
 			room = room.replaceAll("@[a-z0-9]{4,}", "");
 
-			if (room.contains("special"))
-				room = room.replace("special.", "") + " (special)";
-			if (room.contains("secret"))
-				room = room.replace("secret.", "") + " (secret)";
+			if (room.contains("special")) {
+				room = room.replace("special.", "");
 
-			// turn camel case to normal text
-			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+				// turn camel case to normal text
+				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+
+				String tabstring = "";
+				for (int j = 0; j < Math.max(1,
+						Options.infoSpacing - room.length()); j++) {
+					tabstring += Options.spacingChar;
+				}
+
+				room += tabstring + "(special)";
+			} else if (room.contains("secret")) {
+				room = room.replace("secret.", "");
+
+				// turn camel case to normal text
+				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+
+				String tabstring = "";
+				for (int j = 0; j < Math.max(1,
+						Options.infoSpacing - room.length()); j++) {
+					tabstring += Options.spacingChar;
+				}
+
+				room += tabstring + "(secret)";
+			}
 
 			rooms.add(room);
 		}
@@ -749,20 +775,28 @@ public class SeedFinder {
 					String tabstring = "";
 					for (int j = 0; j < Math.max(1,
 							Options.infoSpacing - fireItem.title().toLowerCase().length()); j++) {
-						tabstring += " ";
+						tabstring += Options.spacingChar;
 					}
 
 					builder.append("- " + fireItem.title().toLowerCase() + tabstring + "(sacrificial fire)");
 					builder.append("\n\n");
+				} else {
+					builder.append("\n");
 				}
 			}
 
-			if (Options.logScrolls) 	addTextItems("Scrolls", scrolls, builder, "\n");
-			if (Options.logPotions) 	addTextItems("Potions", potions, builder, "\n");
-			if (Options.logRings) 		addTextItems("Rings", rings, builder, "\n");
-			if (Options.logWands) 		addTextItems("Wands", wands, builder, "\n");
-			if (Options.logArtifacts) 	addTextItems("Artifacts", artifacts, builder, "\n");
-			if (Options.logOther) 		addTextItems("Other", others, builder, "\n");
+			if (Options.logScrolls)
+				addTextItems("Scrolls", scrolls, builder, "\n");
+			if (Options.logPotions)
+				addTextItems("Potions", potions, builder, "\n");
+			if (Options.logRings)
+				addTextItems("Rings", rings, builder, "\n");
+			if (Options.logWands)
+				addTextItems("Wands", wands, builder, "\n");
+			if (Options.logArtifacts)
+				addTextItems("Artifacts", artifacts, builder, "\n");
+			if (Options.logOther)
+				addTextItems("Other", others, builder, "\n");
 
 			out.print(builder.toString());
 
