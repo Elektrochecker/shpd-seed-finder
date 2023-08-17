@@ -17,7 +17,7 @@ Extract the zip archive (or place the jar file in an empty folder). This Folder 
 In order to use the seedfinder, commands must be executed in the directory of the seedfinder. Open a command prompt as follows:
 - windows: hold `shift `and right-click your folder. choose `open a powershell window here`.
 - linux: linux users know how to open a termial
-- apple: please google how to open a terminal on your OS
+- apple: inform yourself how to open a terminal on your OS
 
 Commands can be executed by typing them in this window and pressing `Enter`. You can test your Java installation by running the following command:
 ```
