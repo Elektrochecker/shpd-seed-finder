@@ -10,4 +10,6 @@ cd seed-finder
 ren desktop*.jar seed-finder.jar
 curl -o seed-converter.js https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/tools/seed-converter.js
 curl -o index.js https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/tools/turbo.js
+curl -o readme.md https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/README.md
+curl -o seedfinder.cfg https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/seedfinder.cfg
 pause

@@ -3,7 +3,7 @@
 Application to find seeds for Shattered Pixel Dungeon given constraints (e.g. wand of disintegration +2 and ring of evasion in the first 4 floors).
 It can also display items found on a specific seed.
 
-In this repository I will contribute to Shattered Pixel Dungeon v2.0.0 and above. To view releases from previous seedfinder versions, see https://github.com/alessiomarotta/shpd-seed-finder
+In [this repository](https://github.com/Elektrochecker/shpd-seed-finder) I will contribute to seedfinder for Shattered Pixel Dungeon v2.0.0 and above. To view releases from previous seedfinder versions, see https://github.com/alessiomarotta/shpd-seed-finder
 
 # How to use
 
@@ -17,7 +17,7 @@ Extract the zip archive (or place the jar file in an empty folder). This Folder 
 In order to use the seedfinder, commands must be executed in the directory of the seedfinder. Open a command prompt as follows:
 - windows: hold `shift `and right-click your folder. choose `open a powershell window here`.
 - linux: linux users know how to open a termial
-- apple: inform yourself how to open a terminal on your OS
+- other: inform yourself how to open a terminal on your OS
 
 Commands can be executed by typing them in this window and pressing `Enter`. You can test your Java installation by running the following command:
 ```
