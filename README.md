@@ -15,7 +15,7 @@ In [this repository](https://github.com/Elektrochecker/shpd-seed-finder) I will 
 Extract the zip archive (or place the jar file in an empty folder). This Folder will be the working directory for the seedfinder.
 
 In order to use the seedfinder, commands must be executed in the directory of the seedfinder. Open a command prompt as follows:
-- windows: hold `shift `and right-click your folder. choose `open a powershell window here`.
+- windows: hold `shift` and right-click your folder. choose `open a powershell window here`.
 - linux: linux users know how to open a termial
 - other: inform yourself how to open a terminal on your OS
 
@@ -78,7 +78,7 @@ This will start a number of seedfinders equal the provided argument (4 if left b
 
 # How to build
 ### build script
-On windows the buid script `tools/build.bat` can be executed to automatically build a seedfinder for the newest version of [SHPD](https://github.com/00-Evan/shattered-pixel-dungeon) by running it in an empty (!) folder.
+On windows the buid script `tools/build.bat` can be executed to automatically build a seedfinder for the newest version of [SHPD](https://github.com/00-Evan/shattered-pixel-dungeon) by running it in an empty (!) folder. No files other than `build.bat` are required. Git and Java must be installed in order to build the seedfinder.
 
 ### manual build
 1. Clone the [Shattered Pixel Dungeon](https://github.com/00-Evan/shattered-pixel-dungeon) repository.
@@ -105,7 +105,9 @@ git apply changes.patch
 ```
 ./gradlew desktop:release
 ```
+
 5. Assemble the full project:
-- put `seed-finder.jar` in its own folder
+- rename build to `seed-finder.jar` and put it in its own folder
 - download required scripts from the tools folder
+- rename `turbo.js` to `index.js` in order to keep the syntax simple
 - run the seedfinder once to generate a config file
