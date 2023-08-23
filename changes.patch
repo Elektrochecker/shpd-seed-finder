@@ -1,12 +1,12 @@
-From 0d28785f1e0af0c8c46906cf5c6cdb0f6e61c12e Mon Sep 17 00:00:00 2001
+From 790d4671cdfa518a0be17d9c565e1e844033f6df Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Wed, 23 Aug 2023 19:43:11 +0200
+Date: Wed, 23 Aug 2023 20:11:36 +0200
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |  43 +-
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 805 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 808 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -22,7 +22,7 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/standard/EntranceRoom.java   |  31 -
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 18 files changed, 875 insertions(+), 70 deletions(-)
+ 18 files changed, 878 insertions(+), 70 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -89,10 +89,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..371b83695
+index 000000000..6c493d9f6
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,805 @@
+@@ -0,0 +1,808 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -441,7 +441,7 @@ index 000000000..371b83695
 +				}
 +			}
 +
-+			// sequential mode: start at 0
++		// sequential mode: start at 0
 +		} else if (Options.sequentialMode) {
 +			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
 +				if (testSeed(Long.toString(i), Options.floors)) {
@@ -451,14 +451,12 @@ index 000000000..371b83695
 +				}
 +			}
 +
-+			// default (random) mode
++		// default (random) mode
 +		} else {
-+			String seedDigits = Integer.toString(Random.Int(542900));
-+			for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
-+				if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
-+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
-+							Dungeon.seed);
-+					logSeedItems(seedDigits + Integer.toString(i), Options.floors);
++			for (long i = Random.Long(DungeonSeed.TOTAL_SEEDS); i < DungeonSeed.TOTAL_SEEDS; i++) {
++				if (testSeed(Long.toString(i), Options.floors)) {
++					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
++					logSeedItems(Long.toString(i), Options.floors);
 +				}
 +			}
 +		}
@@ -558,9 +556,11 @@ index 000000000..371b83695
 +			Level l = Dungeon.newLevel();
 +
 +			// skip boss floors
-+			if (Dungeon.depth % 5 == 0) {
-+				continue;
-+			}
++			//for some reason this fucks up quest item searching
++
++			// if (Dungeon.depth % 5 == 0) {
++			// 	continue;
++			// }
 +
 +			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
 +			heaps.addAll(getMobDrops(l));
@@ -862,6 +862,9 @@ index 000000000..371b83695
 +
 +				// sacrificial fire
 +				if (l.sacrificialFireItem != null) {
++					if (equipment.size() == 0) {
++						builder.append("Equipment:\n");
++					}
 +					Item fireItem = l.sacrificialFireItem.identify();
 +
 +					String tabstring = "";

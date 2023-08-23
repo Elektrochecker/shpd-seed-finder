@@ -346,7 +346,7 @@ public class SeedFinder {
 				}
 			}
 
-			// sequential mode: start at 0
+		// sequential mode: start at 0
 		} else if (Options.sequentialMode) {
 			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
 				if (testSeed(Long.toString(i), Options.floors)) {
@@ -356,14 +356,12 @@ public class SeedFinder {
 				}
 			}
 
-			// default (random) mode
+		// default (random) mode
 		} else {
-			String seedDigits = Integer.toString(Random.Int(542900));
-			for (int i = Random.Int(9999999); i < DungeonSeed.TOTAL_SEEDS; i++) {
-				if (testSeed(seedDigits + Integer.toString(i), Options.floors)) {
-					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
-							Dungeon.seed);
-					logSeedItems(seedDigits + Integer.toString(i), Options.floors);
+			for (long i = Random.Long(DungeonSeed.TOTAL_SEEDS); i < DungeonSeed.TOTAL_SEEDS; i++) {
+				if (testSeed(Long.toString(i), Options.floors)) {
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					logSeedItems(Long.toString(i), Options.floors);
 				}
 			}
 		}
@@ -463,9 +461,11 @@ public class SeedFinder {
 			Level l = Dungeon.newLevel();
 
 			// skip boss floors
-			if (Dungeon.depth % 5 == 0) {
-				continue;
-			}
+			//for some reason this fucks up quest item searching
+
+			// if (Dungeon.depth % 5 == 0) {
+			// 	continue;
+			// }
 
 			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
 			heaps.addAll(getMobDrops(l));
@@ -767,6 +767,9 @@ public class SeedFinder {
 
 				// sacrificial fire
 				if (l.sacrificialFireItem != null) {
+					if (equipment.size() == 0) {
+						builder.append("Equipment:\n");
+					}
 					Item fireItem = l.sacrificialFireItem.identify();
 
 					String tabstring = "";
