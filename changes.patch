@@ -1,12 +1,12 @@
-From 1c4c49d4b4bb6125709e26129d88d3151de41506 Mon Sep 17 00:00:00 2001
+From 0d28785f1e0af0c8c46906cf5c6cdb0f6e61c12e Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Fri, 4 Aug 2023 19:49:30 +0200
+Date: Wed, 23 Aug 2023 19:43:11 +0200
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |  43 +-
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 808 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 805 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -22,7 +22,7 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/standard/EntranceRoom.java   |  31 -
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 18 files changed, 878 insertions(+), 70 deletions(-)
+ 18 files changed, 875 insertions(+), 70 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -89,10 +89,10 @@ index d99597cd8..d86357075 100644
  	public static void log( String tag, String message ){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..4c0568217
+index 000000000..371b83695
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,808 @@
+@@ -0,0 +1,805 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -469,36 +469,33 @@ index 000000000..4c0568217
 +		for (int k = 0; k < RegularLevel.roomList.size(); k++) {
 +			String room = RegularLevel.roomList.get(k).toString()
 +					.replace("com.shatteredpixel.shatteredpixeldungeon.levels.rooms.", "");
-+			room = room.replace("standard.", "");
++
++			String roomType = "standard";
++
++			// remove Java object instance code
 +			room = room.replaceAll("@[a-z0-9]{4,}", "");
++
++			// turn camel case to normal text
++			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
 +
 +			if (room.contains("special")) {
 +				room = room.replace("special.", "");
-+
-+				// turn camel case to normal text
-+				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
-+
-+				String tabstring = "";
-+				for (int j = 0; j < Math.max(1,
-+						Options.infoSpacing - room.length()); j++) {
-+					tabstring += Options.spacingChar;
-+				}
-+
-+				room += tabstring + "(special)";
++				roomType = "special";
 +			} else if (room.contains("secret")) {
 +				room = room.replace("secret.", "");
-+
-+				// turn camel case to normal text
-+				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
-+
-+				String tabstring = "";
-+				for (int j = 0; j < Math.max(1,
-+						Options.infoSpacing - room.length()); j++) {
-+					tabstring += Options.spacingChar;
-+				}
-+
-+				room += tabstring + "(secret)";
++				roomType = "secret";
++			} else if (room.contains("standard")) {
++				room = room.replace("standard.", "");
++				roomType = "standard";
 +			}
++
++			String tabstring = "";
++			for (int j = 0; j < Math.max(1,
++					Options.infoSpacing - room.length()); j++) {
++				tabstring += Options.spacingChar;
++			}
++
++			room += tabstring + roomType;
 +
 +			rooms.add(room);
 +		}
@@ -1184,5 +1181,5 @@ index f448f2557..0733bf5ac 100644
  	}
  }
 -- 
-2.41.0.windows.1
+2.42.0.windows.1
 

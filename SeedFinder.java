@@ -374,36 +374,33 @@ public class SeedFinder {
 		for (int k = 0; k < RegularLevel.roomList.size(); k++) {
 			String room = RegularLevel.roomList.get(k).toString()
 					.replace("com.shatteredpixel.shatteredpixeldungeon.levels.rooms.", "");
-			room = room.replace("standard.", "");
+
+			String roomType = "standard";
+
+			// remove Java object instance code
 			room = room.replaceAll("@[a-z0-9]{4,}", "");
+
+			// turn camel case to normal text
+			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
 
 			if (room.contains("special")) {
 				room = room.replace("special.", "");
-
-				// turn camel case to normal text
-				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
-
-				String tabstring = "";
-				for (int j = 0; j < Math.max(1,
-						Options.infoSpacing - room.length()); j++) {
-					tabstring += Options.spacingChar;
-				}
-
-				room += tabstring + "(special)";
+				roomType = "special";
 			} else if (room.contains("secret")) {
 				room = room.replace("secret.", "");
-
-				// turn camel case to normal text
-				room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
-
-				String tabstring = "";
-				for (int j = 0; j < Math.max(1,
-						Options.infoSpacing - room.length()); j++) {
-					tabstring += Options.spacingChar;
-				}
-
-				room += tabstring + "(secret)";
+				roomType = "secret";
+			} else if (room.contains("standard")) {
+				room = room.replace("standard.", "");
+				roomType = "standard";
 			}
+
+			String tabstring = "";
+			for (int j = 0; j < Math.max(1,
+					Options.infoSpacing - room.length()); j++) {
+				tabstring += Options.spacingChar;
+			}
+
+			room += tabstring + roomType;
 
 			rooms.add(room);
 		}
