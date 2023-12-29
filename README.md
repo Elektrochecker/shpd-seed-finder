@@ -97,13 +97,17 @@ curl -o changes.patch https://raw.githubusercontent.com/Elektrochecker/shpd-seed
 3. Apply the patch to the repository.
 
 ```
-git apply changes.patch
+git apply changes.patch --reject
 ```
 
 4. Compile the application with the following command:
 
 ```
 ./gradlew desktop:release
+```
+Upon completion the build output wil be located at
+```
+./desktop/build/libs
 ```
 
 5. Assemble the full project:
