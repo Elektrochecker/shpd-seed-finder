@@ -1,11 +1,13 @@
-From b134eef69452ad2b33a4a5f4f2972771b21f4200 Mon Sep 17 00:00:00 2001
+From c9c39911f75b3046f693aa44b8d990bd02fc0add Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Thu, 18 Jan 2024 21:00:40 +0100
+Date: Wed, 24 Jan 2024 16:09:22 +0100
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |   3 +
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
+ build.gradle                                  |   4 +-
+ .../shatteredpixeldungeon/SPDSettings.java    |   2 +-
  .../shatteredpixeldungeon/SeedFinder.java     | 808 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
@@ -22,7 +24,7 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/standard/EntranceRoom.java   |  32 -
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   4 +
- 18 files changed, 858 insertions(+), 51 deletions(-)
+ 20 files changed, 861 insertions(+), 54 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -50,6 +52,34 @@ index 48e1e7f16..f0d21bb2b 100644
  	}
  	
  	public static void log( String tag, String message ){
+diff --git a/build.gradle b/build.gradle
+index 8855fb2ae..8b8301d75 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -12,8 +12,8 @@ buildscript {
+ allprojects {
+ 
+     ext {
+-        appName = 'Shattered Pixel Dungeon'
+-        appPackageName = 'com.shatteredpixel.shatteredpixeldungeon'
++        appName = 'Shattered Pixel Dungeon Seedfinder'
++        appPackageName = 'com.elektrochecker.seedfinder'
+ 
+         appVersionCode = 765
+         appVersionName = '2.3.0'
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
+index c8e58a03a..2bd014bd0 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
+@@ -217,7 +217,7 @@ public class SPDSettings extends GameSettings {
+ 	}
+ 	
+ 	public static boolean intro() {
+-		return getBoolean( KEY_INTRO, true );
++		return false;
+ 	}
+ 	
+ 	public static void lastClass( int value ) {
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
 index 000000000..6c493d9f6
