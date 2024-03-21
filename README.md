@@ -5,6 +5,8 @@ It can also display items found on a specific seed.
 
 In [this repository](https://github.com/Elektrochecker/shpd-seed-finder) I will contribute to seedfinder for Shattered Pixel Dungeon v2.0.0 and above. To view releases from previous seedfinder versions, see https://github.com/alessiomarotta/shpd-seed-finder
 
+[SHPD Toolkit](https://github.com/Elektrochecker/shpd-toolkit) is a GUI version of this project which is easier to use and can be installed on android.
+
 # How to use
 
 ## setup
@@ -100,6 +102,8 @@ curl -o changes.patch https://raw.githubusercontent.com/Elektrochecker/shpd-seed
 git apply changes.patch --reject
 ```
 
+Potentially fix any rejects manually. The rejected parts of the patch are marked with `.rej` files in the project.
+
 4. Compile the application with the following command:
 
 ```
@@ -107,7 +111,7 @@ git apply changes.patch --reject
 ```
 Upon completion the build output wil be located at
 ```
-./desktop/build/libs
+desktop/build/libs
 ```
 
 5. Assemble the full project:
