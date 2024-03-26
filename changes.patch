@@ -1,14 +1,15 @@
-From c9c39911f75b3046f693aa44b8d990bd02fc0add Mon Sep 17 00:00:00 2001
+From dcf51be4af4e18a89ed981578c13403046b4bf39 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Wed, 24 Jan 2024 16:09:22 +0100
+Date: Tue, 26 Mar 2024 15:48:52 +0100
 Subject: [PATCH] seedfinder
 
 ---
  .gitignore                                    |   3 +
+ .../src/main/java/com/watabou/noosa/Game.java |   1 +
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
- build.gradle                                  |   4 +-
+ build.gradle                                  |   2 +-
  .../shatteredpixeldungeon/SPDSettings.java    |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 808 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 810 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -23,8 +24,8 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/special/SacrificeRoom.java   |   1 +
  .../levels/rooms/standard/EntranceRoom.java   |  32 -
  .../messages/Languages.java                   |   4 -
- .../desktop/DesktopLauncher.java              |   4 +
- 20 files changed, 861 insertions(+), 54 deletions(-)
+ .../desktop/DesktopLauncher.java              |   5 +
+ 21 files changed, 864 insertions(+), 53 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -39,6 +40,18 @@ index 5b124b5b1..dced0190d 100644
 +#git patch files
 +*.patch
 \ No newline at end of file
+diff --git a/SPD-classes/src/main/java/com/watabou/noosa/Game.java b/SPD-classes/src/main/java/com/watabou/noosa/Game.java
+index 051faa822..5944ee570 100644
+--- a/SPD-classes/src/main/java/com/watabou/noosa/Game.java
++++ b/SPD-classes/src/main/java/com/watabou/noosa/Game.java
+@@ -63,6 +63,7 @@ public class Game implements ApplicationListener {
+ 	public static float density = 1;
+ 	
+ 	public static String version;
++	public static String appname;
+ 	public static int versionCode;
+ 	
+ 	// Current scene
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
 index 48e1e7f16..f0d21bb2b 100644
 --- a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
@@ -53,25 +66,23 @@ index 48e1e7f16..f0d21bb2b 100644
  	
  	public static void log( String tag, String message ){
 diff --git a/build.gradle b/build.gradle
-index 8855fb2ae..8b8301d75 100644
+index bff8a46dc..79d509589 100644
 --- a/build.gradle
 +++ b/build.gradle
-@@ -12,8 +12,8 @@ buildscript {
- allprojects {
+@@ -14,7 +14,7 @@ allprojects {
  
      ext {
--        appName = 'Shattered Pixel Dungeon'
+         appName = 'Shattered Pixel Dungeon'
 -        appPackageName = 'com.shatteredpixel.shatteredpixeldungeon'
-+        appName = 'Shattered Pixel Dungeon Seedfinder'
 +        appPackageName = 'com.elektrochecker.seedfinder'
  
-         appVersionCode = 765
-         appVersionName = '2.3.0'
+         appVersionCode = 768
+         appVersionName = '2.3.2'
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
-index c8e58a03a..2bd014bd0 100644
+index 48d22fb10..cc832e71d 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
-@@ -217,7 +217,7 @@ public class SPDSettings extends GameSettings {
+@@ -236,7 +236,7 @@ public class SPDSettings extends GameSettings {
  	}
  	
  	public static boolean intro() {
@@ -82,10 +93,10 @@ index c8e58a03a..2bd014bd0 100644
  	public static void lastClass( int value ) {
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..6c493d9f6
+index 000000000..5cffd0c0f
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,808 @@
+@@ -0,0 +1,810 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -403,7 +414,9 @@ index 000000000..6c493d9f6
 +	}
 +
 +	public SeedFinder(String[] args) {
-+		System.out.print("Elektrocheckers seed finder for SHPD v" + Game.version + "\n");
++		System.out.println("\n==============================================================");
++		System.out.println("Elektrocheckers seed finder for " + Game.appname + " v" + Game.version);
++		System.out.println("==============================================================\n");
 +
 +		parseConfig("seedfinder.cfg");
 +		parseArgs(args);
@@ -1052,7 +1065,7 @@ index 0c5c17105..f8c7e32ac 100644
  	@Override
  	public String info() {
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
-index 2410b7d19..c3a65739a 100644
+index a17312642..5cc7aa505 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
 @@ -188,6 +188,8 @@ public abstract class Level implements Bundlable {
@@ -1141,7 +1154,7 @@ index 1dddebf1b..20d18d97e 100644
  
  	@Override
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
-index f357bf359..5dfddb9fc 100644
+index 762652e69..a1c62cc7f 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 @@ -98,10 +98,6 @@ public enum Languages {
@@ -1156,7 +1169,7 @@ index f357bf359..5dfddb9fc 100644
  	}
  
 diff --git a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
-index 351384c1b..85febe7e2 100644
+index 351384c1b..7c81c2d58 100644
 --- a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 +++ b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 @@ -28,6 +28,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3FileHandle;
@@ -1167,7 +1180,15 @@ index 351384c1b..85febe7e2 100644
  import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
  import com.shatteredpixel.shatteredpixeldungeon.services.news.News;
  import com.shatteredpixel.shatteredpixeldungeon.services.news.NewsImpl;
-@@ -185,6 +186,9 @@ public class DesktopLauncher {
+@@ -111,6 +112,7 @@ public class DesktopLauncher {
+ 		});
+ 		
+ 		Game.version = DesktopLauncher.class.getPackage().getSpecificationVersion();
++		Game.appname = DesktopLauncher.class.getPackage().getSpecificationTitle();
+ 		if (Game.version == null) {
+ 			Game.version = System.getProperty("Specification-Version");
+ 		}
+@@ -185,6 +187,9 @@ public class DesktopLauncher {
  		config.setWindowIcon("icons/icon_16.png", "icons/icon_32.png", "icons/icon_48.png",
  				"icons/icon_64.png", "icons/icon_128.png", "icons/icon_256.png");
  
@@ -1178,5 +1199,5 @@ index 351384c1b..85febe7e2 100644
  	}
  }
 -- 
-2.43.0.windows.1
+2.44.0.windows.1
 
