@@ -1,9 +1,11 @@
 # Shattered Pixel Dungeon seed finder
 
+https://github.com/Elektrochecker/shpd-seed-finder
+
 Application to find seeds for Shattered Pixel Dungeon given constraints (e.g. wand of disintegration +2 and ring of evasion in the first 4 floors).
 It can also display items found on a specific seed.
 
-In [this repository](https://github.com/Elektrochecker/shpd-seed-finder) I will contribute to seedfinder for Shattered Pixel Dungeon v2.0.0 and above. To view releases from previous seedfinder versions, see https://github.com/alessiomarotta/shpd-seed-finder
+As different versions of Shattered Pixel Dungeon generate different dungeons, a release of shpd-seedfinder will only work with certain versions of Shattered Pixel Dungeon. Versions that only differ by the last digit in the version code (for example v2.3.0 and v2.3.1) are likeley, but not guaranteed to share the same level generation.
 
 [SHPD Toolkit](https://github.com/Elektrochecker/shpd-toolkit) is a GUI version of this project which is easier to use and can be installed on android.
 
