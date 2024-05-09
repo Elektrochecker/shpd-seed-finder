@@ -81,8 +81,14 @@ node . <floor> <mode> <seed item file> [number of processes]
 This will start a number of seedfinders equal the provided argument (4 if left blank).  Make sure that sequential mode is disabled in the config file, there would be no point using it with multiple seedfinders. Don't overdo it with the number of seedfinders, since the program will take all the resources it can.
 
 # How to build
+Git and Java must be installed in order to build the seedfinder.
+
 ### build script
-On windows the buid script `tools/build.bat` can be executed to automatically build a seedfinder for the newest version of [SHPD](https://github.com/00-Evan/shattered-pixel-dungeon) by running it in an empty (!) folder. No files other than `build.bat` are required. Git and Java must be installed in order to build the seedfinder.
+The buid script `tools/build.bat` (windows) or `tools/build.sh` (linux) can be executed to automatically build a seedfinder for the newest version of [SHPD](https://github.com/00-Evan/shattered-pixel-dungeon) by running it in an empty (!) folder. No files other than the build script are required.
+
+```
+chmod +x build.sh && ./build.sh
+```
 
 ### manual build
 1. Clone the [Shattered Pixel Dungeon](https://github.com/00-Evan/shattered-pixel-dungeon) repository.
