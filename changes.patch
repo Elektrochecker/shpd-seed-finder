@@ -1,6 +1,6 @@
-From f4215ca898a17ba4b64b3b01dcde80237219f2fd Mon Sep 17 00:00:00 2001
+From 77241b0c078fa55e73da20a349c93ecc652a8b19 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Wed, 15 May 2024 17:54:08 +0200
+Date: Thu, 16 May 2024 10:50:18 +0200
 Subject: [PATCH] seedfinder
 
 ---
@@ -8,23 +8,25 @@ Subject: [PATCH] seedfinder
  .../src/main/java/com/watabou/noosa/Game.java |   1 +
  .../java/com/watabou/utils/DeviceCompat.java  |   2 +-
  build.gradle                                  |   2 +-
- .../shatteredpixeldungeon/SPDSettings.java    |   2 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 810 ++++++++++++++++++
+ .../shatteredpixeldungeon/SPDSettings.java    |   6 +-
+ .../shatteredpixeldungeon/SeedFinder.java     | 892 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
+ .../actors/mobs/npcs/Blacksmith.java          |   2 +-
  .../actors/mobs/npcs/Wandmaker.java           |   2 +-
- .../shatteredpixeldungeon/items/Heap.java     |  14 +-
+ .../shatteredpixeldungeon/items/Heap.java     |  19 +-
  .../shatteredpixeldungeon/items/Item.java     |   4 +
  .../items/potions/Potion.java                 |   5 +
  .../items/rings/Ring.java                     |   5 +
  .../items/scrolls/Scroll.java                 |   5 +
+ .../items/trinkets/TrinketCatalyst.java       |   4 +-
  .../shatteredpixeldungeon/levels/Level.java   |   2 +
  .../levels/RegularLevel.java                  |   3 +
  .../levels/rooms/special/SacrificeRoom.java   |   1 +
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   5 +
- 20 files changed, 864 insertions(+), 21 deletions(-)
+ 22 files changed, 955 insertions(+), 27 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -78,7 +80,7 @@ index c72803041..ad7e28efc 100644
          appVersionCode = 780
          appVersionName = '2.4.0'
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
-index 48d22fb10..cc832e71d 100644
+index 48d22fb10..e862fb208 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
 @@ -236,7 +236,7 @@ public class SPDSettings extends GameSettings {
@@ -90,12 +92,30 @@ index 48d22fb10..cc832e71d 100644
  	}
  	
  	public static void lastClass( int value ) {
+@@ -314,7 +314,7 @@ public class SPDSettings extends GameSettings {
+ 	}
+ 
+ 	public static boolean news(){
+-		return getBoolean(KEY_NEWS, true);
++		return getBoolean(KEY_NEWS, false);
+ 	}
+ 
+ 	public static void updates(boolean value){
+@@ -322,7 +322,7 @@ public class SPDSettings extends GameSettings {
+ 	}
+ 
+ 	public static boolean updates(){
+-		return getBoolean(KEY_UPDATES, true);
++		return getBoolean(KEY_UPDATES, false);
+ 	}
+ 
+ 	public static void betas(boolean value){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..5cffd0c0f
+index 000000000..63cb1a178
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,810 @@
+@@ -0,0 +1,892 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -126,6 +146,7 @@ index 000000000..5cffd0c0f
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.GoldenMimic;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mimic;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
++import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Blacksmith;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Ghost;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Imp;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.npcs.Wandmaker;
@@ -134,6 +155,7 @@ index 000000000..5cffd0c0f
 +import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.Artifact;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Dewdrop;
 +import com.shatteredpixel.shatteredpixeldungeon.items.EnergyCrystal;
++import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Gold;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 +import com.shatteredpixel.shatteredpixeldungeon.items.Heap.Type;
@@ -149,6 +171,8 @@ index 000000000..5cffd0c0f
 +import com.shatteredpixel.shatteredpixeldungeon.items.quest.Pickaxe;
 +import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 +import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
++import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.Trinket;
++import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.TrinketCatalyst;
 +import com.shatteredpixel.shatteredpixeldungeon.items.wands.Wand;
 +import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 +import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
@@ -179,6 +203,7 @@ index 000000000..5cffd0c0f
 +		public static int challenges;
 +
 +		public static boolean useRooms;
++		public static boolean logTrinkets;
 +		public static boolean logPotions;
 +		public static boolean logScrolls;
 +		public static boolean logEquipment;
@@ -201,6 +226,10 @@ index 000000000..5cffd0c0f
 +		public HeapItem(Item item, Heap heap) {
 +			this.item = item;
 +			this.heap = heap;
++		}
++
++		public String name() {
++			return item.name();
 +		}
 +	}
 +
@@ -252,6 +281,7 @@ index 000000000..5cffd0c0f
 +				prop.setProperty("trueRandomMode", "false");
 +				prop.setProperty("sequentialMode", "false");
 +				prop.setProperty("useRooms", "false");
++				prop.setProperty("logTrinkets", "true");
 +				prop.setProperty("logPotions", "true");
 +				prop.setProperty("logScrolls", "true");
 +				prop.setProperty("logEquipment", "true");
@@ -277,6 +307,7 @@ index 000000000..5cffd0c0f
 +				prop.store(output, null);
 +
 +				System.out.printf("\nERROR: no config file found. created " + fileName + "\n\n");
++				System.exit(0);
 +			} catch (IOException io) {
 +			}
 +		} catch (IOException ex) {
@@ -285,6 +316,7 @@ index 000000000..5cffd0c0f
 +		// pull options from config
 +		Options.useChallenges = cfg.getProperty("useChallenges").equals("true");
 +		Options.useRooms = cfg.getProperty("useRooms").equals("true");
++		Options.logTrinkets = cfg.getProperty("logTrinkets").equals("true");
 +		Options.logPotions = cfg.getProperty("logPotions").equals("true");
 +		Options.logScrolls = cfg.getProperty("logScrolls").equals("true");
 +		Options.logEquipment = cfg.getProperty("logEquipment").equals("true");
@@ -487,6 +519,14 @@ index 000000000..5cffd0c0f
 +			} else if (room.contains("secret")) {
 +				room = room.replace("secret.", "");
 +				roomType = "secret";
++			} else if (room.contains("entrance")) {
++				room = room.replace("entrance.", "");
++				room = room.replace("standard.", "");
++				roomType = "entrance";
++			} else if (room.contains("exit")) {
++				room = room.replace("exit.", "");
++				room = room.replace("standard.", "");
++				roomType = "exit";
 +			} else if (room.contains("standard")) {
 +				room = room.replace("standard.", "");
 +				roomType = "standard";
@@ -507,46 +547,66 @@ index 000000000..5cffd0c0f
 +		return rooms;
 +	}
 +
-+	private ArrayList<Heap> getMobDrops(Level l) {
-+		ArrayList<Heap> heaps = new ArrayList<>();
++	private ArrayList<HeapItem> getTrinkets() {
++		TrinketCatalyst cata = new TrinketCatalyst();
++		int NUM_TRINKETS = TrinketCatalyst.WndTrinket.NUM_TRINKETS;
 +
-+		for (Mob m : l.mobs) {
-+			if (m instanceof Statue) {
-+				Heap h = new Heap();
-+				h.items = new LinkedList<>();
-+				h.items.add(((Statue) m).weapon.identify());
-+				h.type = Type.STATUE;
-+				heaps.add(h);
-+			}
-+
-+			else if (m instanceof ArmoredStatue) {
-+				Heap h = new Heap();
-+				h.items = new LinkedList<>();
-+				h.items.add(((ArmoredStatue) m).armor.identify());
-+				h.items.add(((ArmoredStatue) m).weapon.identify());
-+				h.type = Type.STATUE;
-+				heaps.add(h);
-+			}
-+
-+			else if (m instanceof Mimic) {
-+				Heap h = new Heap();
-+				h.items = new LinkedList<>();
-+
-+				for (Item item : ((Mimic) m).items)
-+					h.items.add(item.identify());
-+
-+				if (m instanceof GoldenMimic)
-+					h.type = Type.GOLDEN_MIMIC;
-+				else if (m instanceof CrystalMimic)
-+					h.type = Type.CRYSTAL_MIMIC;
-+				else
-+					h.type = Type.MIMIC;
-+				heaps.add(h);
-+			}
++		// roll new trinkets if trinkets were not already rolled
++		while (cata.rolledTrinkets.size() < NUM_TRINKETS) {
++			cata.rolledTrinkets.add((Trinket) Generator.random(Generator.Category.TRINKET));
 +		}
 +
-+		return heaps;
++		ArrayList<HeapItem> trinkets = new ArrayList<>();
++
++		for (int i = 0; i < NUM_TRINKETS; i++) {
++			Heap h = new Heap();
++			h.type = Heap.Type.TrinketCatalyst;
++			trinkets.add(new HeapItem(cata.rolledTrinkets.get(i), h));
++		}
++
++		return trinkets;
 +	}
++
++	// private ArrayList<Heap> getMobDrops(Level l) {
++	// 	ArrayList<Heap> heaps = new ArrayList<>();
++
++	// 	for (Mob m : l.mobs) {
++	// 		if (m instanceof Statue) {
++	// 			Heap h = new Heap();
++	// 			h.items = new LinkedList<>();
++	// 			h.items.add(((Statue) m).weapon.identify());
++	// 			h.type = Type.STATUE;
++	// 			heaps.add(h);
++	// 		}
++
++	// 		else if (m instanceof ArmoredStatue) {
++	// 			Heap h = new Heap();
++	// 			h.items = new LinkedList<>();
++	// 			h.items.add(((ArmoredStatue) m).armor.identify());
++	// 			h.items.add(((ArmoredStatue) m).weapon.identify());
++	// 			h.type = Type.STATUE;
++	// 			heaps.add(h);
++	// 		}
++
++	// 		else if (m instanceof Mimic) {
++	// 			Heap h = new Heap();
++	// 			h.items = new LinkedList<>();
++
++	// 			for (Item item : ((Mimic) m).items)
++	// 				h.items.add(item.identify());
++
++	// 			if (m instanceof GoldenMimic)
++	// 				h.type = Type.GOLDEN_MIMIC;
++	// 			else if (m instanceof CrystalMimic)
++	// 				h.type = Type.CRYSTAL_MIMIC;
++	// 			else
++	// 				h.type = Type.MIMIC;
++	// 			heaps.add(h);
++	// 		}
++	// 	}
++
++	// 	return heaps;
++	// }
 +
 +	private boolean testSeed(String seed, int floors) {
 +		SPDSettings.customSeed(seed);
@@ -568,7 +628,7 @@ index 000000000..5cffd0c0f
 +			// }
 +
 +			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
-+			heaps.addAll(getMobDrops(l));
++			// heaps.addAll(getMobDrops(l));
 +
 +			// check rooms
 +			if (Options.useRooms) {
@@ -581,6 +641,21 @@ index 000000000..5cffd0c0f
 +									itemsFound[j] = true;
 +									break;
 +								}
++							}
++						}
++					}
++				}
++			}
++
++			// check trinkets
++			if(Options.logTrinkets) {
++				ArrayList<HeapItem> trinkets = getTrinkets();
++				for (int k = 0; k < trinkets.size(); k++) {
++					for (int j = 0; j < itemList.size(); j++) {
++						if (trinkets.get(k).name().toLowerCase().contains(itemList.get(j))) {
++							if (!itemsFound[j]) {
++								itemsFound[j] = true;
++								break;
 +							}
 +						}
 +					}
@@ -713,6 +788,13 @@ index 000000000..5cffd0c0f
 +			blacklist = Arrays.asList();
 +		}
 +
++		if (Options.logTrinkets) {
++			ArrayList<HeapItem> trinkets = getTrinkets();
++			StringBuilder builder = new StringBuilder();
++			addTextItems("Trinkets", trinkets, builder, "\n");
++			out.print(builder.toString());
++		}
++
 +		for (int i = 0; i < floors; i++) {
 +
 +			Level l = Dungeon.newLevel();
@@ -826,6 +908,26 @@ index 000000000..5cffd0c0f
 +				addTextQuest("Wandmaker quest rewards", rewards, builder);
 +			}
 +
++			if (Blacksmith.Quest.type != 0) {
++				builder.append("Blacksmith quest: ");
++				switch (Blacksmith.Quest.type) {
++					case 0:
++						builder.append("old (pre-2.3)");
++						break;
++					case 1:
++						builder.append("crystal cave");
++						break;
++					case 2:
++						builder.append("gnoll geomancer");
++						break;
++					case 3:
++						builder.append("fungus monster");
++						break;
++				}
++				builder.append("\n\n");
++				Blacksmith.Quest.type = 0;
++			}
++
 +			if (Imp.Quest.reward != null) {
 +				ArrayList<Item> rewards = new ArrayList<>();
 +				rewards.add(Imp.Quest.reward.identify());
@@ -834,7 +936,7 @@ index 000000000..5cffd0c0f
 +				addTextQuest("Imp quest reward", rewards, builder);
 +			}
 +
-+			heaps.addAll(getMobDrops(l));
++			// heaps.addAll(getMobDrops(l));
 +
 +			// list items
 +			for (Heap h : heaps) {
@@ -955,6 +1057,19 @@ index 20f59f26f..128489302 100644
  
  	public boolean levelGenStatue = true;
  	
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
+index bc91c2665..388a4a52a 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
+@@ -263,7 +263,7 @@ public class Blacksmith extends NPC {
+ 
+ 	public static class Quest {
+ 
+-		private static int type = 0;
++		public static int type = 0;
+ 		public static final int OLD = 0;
+ 		public static final int CRYSTAL = 1;
+ 		public static final int GNOLL = 2;
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
 index 705a8c65a..9ac4b15f8 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
@@ -969,10 +1084,10 @@ index 705a8c65a..9ac4b15f8 100644
  		// 2 = elemental embers quest
  		// 3 = rotberry quest
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
-index 83bec2a8d..265aeeb8b 100644
+index 83bec2a8d..0ac6f7f94 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
-@@ -68,7 +68,11 @@ public class Heap implements Bundlable {
+@@ -68,7 +68,12 @@ public class Heap implements Bundlable {
  		CRYSTAL_CHEST,
  		TOMB,
  		SKELETON,
@@ -981,11 +1096,12 @@ index 83bec2a8d..265aeeb8b 100644
 +		MIMIC,
 +		GOLDEN_MIMIC,
 +		CRYSTAL_MIMIC,
-+		STATUE
++		STATUE,
++		TrinketCatalyst
  	}
  	public Type type = Type.HEAP;
  	
-@@ -382,6 +386,14 @@ public class Heap implements Bundlable {
+@@ -382,8 +387,18 @@ public class Heap implements Bundlable {
  				return Messages.get(this, "skeleton");
  			case REMAINS:
  				return Messages.get(this, "remains");
@@ -997,9 +1113,14 @@ index 83bec2a8d..265aeeb8b 100644
 +				return "crystal mimic";
 +			case STATUE:
 +				return "statue";
++			case TrinketCatalyst:
++				return "magical catalyst";
  			default:
- 				return peek().title();
+-				return peek().title();
++				return peek().title().toLowerCase();
  		}
+ 	}
+ 
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
 index 3b23365b5..98e6fdfcd 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
@@ -1063,6 +1184,28 @@ index 17cb74da6..bc5fd2131 100644
  	
  	@Override
  	public String info() {
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
+index d237f851b..f1b16e319 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
+@@ -78,7 +78,7 @@ public class TrinketCatalyst extends Item {
+ 		}
+ 	}
+ 
+-	private ArrayList<Trinket> rolledTrinkets = new ArrayList<>();
++	public ArrayList<Trinket> rolledTrinkets = new ArrayList<>();
+ 
+ 	private static final String ROLLED_TRINKETS = "rolled_trinkets";
+ 
+@@ -140,7 +140,7 @@ public class TrinketCatalyst extends Item {
+ 		private static final int BTN_GAP	= 5;
+ 		private static final int GAP		= 2;
+ 
+-		private static final int NUM_TRINKETS = 3;
++		public static final int NUM_TRINKETS = 3;
+ 
+ 		public WndTrinket( TrinketCatalyst cata ){
+ 
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
 index 8d4efd2d7..aa78bdc92 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
