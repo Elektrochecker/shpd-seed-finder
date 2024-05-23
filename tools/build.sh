@@ -16,6 +16,7 @@ git clone https://github.com/00-Evan/shattered-pixel-dungeon
 curl -o shattered-pixel-dungeon/changes.patch https://raw.githubusercontent.com/Elektrochecker/shpd-seed-finder/master/changes.patch
 
 git -C shattered-pixel-dungeon apply changes.patch --reject
+sed -i "s/com.shatteredpixel.shatteredpixeldungeon/com.elektrochecker.seedfinder/" shattered-pixel-dungeon/build.gradle
 
 cd shattered-pixel-dungeon
 ./gradlew desktop:release
