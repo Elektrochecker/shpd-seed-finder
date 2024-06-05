@@ -80,6 +80,14 @@ node . <floor> <mode> <seed item file> [number of processes]
 ```
 This will start a number of seedfinders equal the provided argument (4 if left blank).  Make sure that sequential mode is disabled in the config file, there would be no point using it with multiple seedfinders. Don't overdo it with the number of seedfinders, since the program will take all the resources it can.
 
+## json - converter
+The JSON-converter script converts the human-readable output of the seedfinder or the turbo script into a JSON-format, convenient for further processing.
+
+Usage:
+```
+node json-converter.js <input file> [output file]
+```
+
 # How to build
 Git and Java must be installed in order to build the seedfinder.
 
