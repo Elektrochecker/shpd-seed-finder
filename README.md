@@ -90,6 +90,11 @@ node json-converter.js <input file> [output file]
 
 # How to build
 Git and Java must be installed in order to build the seedfinder.
+It is built by applying a git patch to shattered pixel dungeon and then compiling the project.
+
+Note that when applying the patch, the changes to the package name in build.gradle are prone to failure.
+If the package name is not changed when building, the seedfinder will use the same data directory as shattered pixel dungeon.
+The bash build script `build.sh` fixes this automatically, but the batch script `build.bat` does not.
 
 ### build script
 The buid script `tools/build.bat` (windows) or `tools/build.sh` (linux) can be executed to automatically build a seedfinder for the newest version of [SHPD](https://github.com/00-Evan/shattered-pixel-dungeon) by running it in an empty (!) folder. No files other than the build script are required.
