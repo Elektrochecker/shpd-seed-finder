@@ -492,6 +492,7 @@ public class SeedFinder {
 
 	private boolean testSeed(String seed, int floors) {
 		SPDSettings.customSeed(seed);
+		Dungeon.initSeed();
 		SPDSettings.challenges(Options.challenges);
 		GamesInProgress.selectedClass = HeroClass.WARRIOR;
 		Dungeon.init();
@@ -639,6 +640,7 @@ public class SeedFinder {
 
 		if (Options.searchForDaily) {
 			Dungeon.daily = true;
+			Dungeon.initSeed();
 			long DAY = 1000 * 60 * 60 * 24;
 			long currentDay = (long) Math.floor(Game.realTime / DAY) + Options.DailyOffset;
 			SPDSettings.lastDaily(DAY * currentDay);
@@ -654,6 +656,7 @@ public class SeedFinder {
 		} else {
 			Dungeon.daily = false;
 			SPDSettings.customSeed(seed);
+			Dungeon.initSeed();
 			SPDSettings.challenges(Options.challenges);
 			GamesInProgress.selectedClass = HeroClass.WARRIOR;
 			Dungeon.init();
