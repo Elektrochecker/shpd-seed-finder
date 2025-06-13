@@ -1,4 +1,4 @@
-From c32c2e9f2d66c87b7ac8fa8d725bb8d8895181c7 Mon Sep 17 00:00:00 2001
+From bde51989c472f6340e7d10c8a3a95b1ee674614b Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
 Date: Fri, 13 Jun 2025 10:03:48 +0200
 Subject: [PATCH] seedfinder
@@ -10,7 +10,7 @@ Subject: [PATCH] seedfinder
  build.gradle                                  |   2 +-
  .../shatteredpixeldungeon/Badges.java         |   2 +-
  .../shatteredpixeldungeon/SPDSettings.java    |   6 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 900 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 920 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -24,10 +24,13 @@ Subject: [PATCH] seedfinder
  .../items/trinkets/TrinketCatalyst.java       |   4 +-
  .../shatteredpixeldungeon/levels/Level.java   |   2 +
  .../levels/RegularLevel.java                  |   3 +
+ .../levels/rooms/Room.java                    |   7 +-
+ .../levels/rooms/secret/SecretWellRoom.java   |   2 +
+ .../levels/rooms/special/MagicWellRoom.java   |   3 +-
  .../levels/rooms/special/SacrificeRoom.java   |   1 +
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   5 +
- 23 files changed, 965 insertions(+), 28 deletions(-)
+ 26 files changed, 995 insertions(+), 30 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -126,10 +129,10 @@ index e108ba4d4..7cba18c74 100644
  	public static void betas(boolean value){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..4de26c773
+index 000000000..d8991e39b
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,900 @@
+@@ -0,0 +1,920 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -154,6 +157,8 @@ index 000000000..4de26c773
 +import java.util.Scanner;
 +import java.util.TimeZone;
 +
++import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WaterOfAwareness;
++import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WaterOfHealth;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
 +import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.CrystalMimic;
@@ -192,6 +197,9 @@ index 000000000..4de26c773
 +import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 +import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 +import com.shatteredpixel.shatteredpixeldungeon.levels.RegularLevel;
++import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.Room;
++import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.secret.SecretWellRoom;
++import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicWellRoom;
 +import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 +
 +import com.watabou.utils.Random;
@@ -521,45 +529,60 @@ index 000000000..4de26c773
 +	private ArrayList<String> getRooms() {
 +		ArrayList<String> rooms = new ArrayList<String>();
 +		for (int k = 0; k < RegularLevel.roomList.size(); k++) {
-+			String room = RegularLevel.roomList.get(k).toString()
++			Room room1 = RegularLevel.roomList.get(k);
++			String roomstr = room1.toString()
 +					.replace("com.shatteredpixel.shatteredpixeldungeon.levels.rooms.", "");
++
++			if (room1 instanceof MagicWellRoom || room1 instanceof SecretWellRoom) {
++				String wellstr;
++
++				if (room1.generatedWellWater == WaterOfAwareness.class) {
++					wellstr = " (awareness)";
++				} else if (room1.generatedWellWater == WaterOfHealth.class) {
++					wellstr = " (health)";
++				} else {
++					wellstr = " (?)";
++				}
++
++				roomstr += wellstr;
++			}
 +
 +			String roomType = "standard";
 +
 +			// remove Java object instance code
-+			room = room.replaceAll("@[a-z0-9]{4,}", "");
++			roomstr = roomstr.replaceAll("@[a-z0-9]{4,}", "");
 +
 +			// turn camel case to normal text
-+			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
++			roomstr = roomstr.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
 +
-+			if (room.contains("special")) {
-+				room = room.replace("special.", "");
++			if (roomstr.contains("special")) {
++				roomstr = roomstr.replace("special.", "");
 +				roomType = "special";
-+			} else if (room.contains("secret")) {
-+				room = room.replace("secret.", "");
++			} else if (roomstr.contains("secret")) {
++				roomstr = roomstr.replace("secret.", "");
 +				roomType = "secret";
-+			} else if (room.contains("entrance")) {
-+				room = room.replace("entrance.", "");
-+				room = room.replace("standard.", "");
++			} else if (roomstr.contains("entrance")) {
++				roomstr = roomstr.replace("entrance.", "");
++				roomstr = roomstr.replace("standard.", "");
 +				roomType = "entrance";
-+			} else if (room.contains("exit")) {
-+				room = room.replace("exit.", "");
-+				room = room.replace("standard.", "");
++			} else if (roomstr.contains("exit")) {
++				roomstr = roomstr.replace("exit.", "");
++				roomstr = roomstr.replace("standard.", "");
 +				roomType = "exit";
-+			} else if (room.contains("standard")) {
-+				room = room.replace("standard.", "");
++			} else if (roomstr.contains("standard")) {
++				roomstr = roomstr.replace("standard.", "");
 +				roomType = "standard";
 +			}
 +
 +			String tabstring = "";
 +			for (int j = 0; j < Math.max(1,
-+					Options.infoSpacing - room.length()); j++) {
++					Options.infoSpacing - roomstr.length()); j++) {
 +				tabstring += Options.spacingChar;
 +			}
 +
-+			room += tabstring + roomType;
++			roomstr += tabstring + roomType;
 +
-+			rooms.add(room);
++			rooms.add(roomstr);
 +		}
 +
 +		Collections.sort(rooms);
@@ -1262,6 +1285,56 @@ index b5c56e871..c5f319af5 100644
  		Random.shuffle(initRooms);
  		
  		do {
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
+index ad061cf69..0c4172f50 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
+@@ -21,6 +21,7 @@
+ 
+ package com.shatteredpixel.shatteredpixeldungeon.levels.rooms;
+ 
++import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WellWater;
+ import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
+ import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
+ import com.watabou.utils.Bundlable;
+@@ -485,4 +486,8 @@ public abstract class Room extends Rect implements Graph.Node, Bundlable {
+ 			typeLocked = bundle.getBoolean("type_locked");
+ 		}
+ 	}
+-}
+\ No newline at end of file
++
++	public Class<?extends WellWater> generatedWellWater = null;
++}
++
++
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
+index 357270a60..32629b590 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
+@@ -63,6 +63,8 @@ public class SecretWellRoom extends SecretRoom {
+ 		
+ 		@SuppressWarnings("unchecked")
+ 		Class<? extends WellWater> waterClass = (Class<? extends WellWater>) Random.element( WATERS );
++
++		generatedWellWater = waterClass;
+ 		
+ 		WellWater.seed(well.x + level.width() * well.y, 1, waterClass, level);
+ 		
+diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
+index a091d272b..0f7f08041 100644
+--- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
++++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
+@@ -50,7 +50,8 @@ public class MagicWellRoom extends SpecialRoom {
+ 			overrideWater != null ?
+ 			overrideWater :
+ 			(Class<? extends WellWater>)Random.element( WATERS );
+-			
++
++		generatedWellWater = waterClass;
+ 		
+ 		WellWater.seed(c.x + level.width() * c.y, 1, waterClass, level);
+ 		
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
 index 51eadeb71..12e94b7f6 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
