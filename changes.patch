@@ -1,6 +1,6 @@
-From d991cd1364c88a1bc121287933aa4dc42c0f446c Mon Sep 17 00:00:00 2001
+From c32c2e9f2d66c87b7ac8fa8d725bb8d8895181c7 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Wed, 4 Jun 2025 11:03:07 +0200
+Date: Fri, 13 Jun 2025 10:03:48 +0200
 Subject: [PATCH] seedfinder
 
 ---
@@ -126,7 +126,7 @@ index e108ba4d4..7cba18c74 100644
  	public static void betas(boolean value){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..84fe41d89
+index 000000000..4de26c773
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 @@ -0,0 +1,900 @@
@@ -636,6 +636,21 @@ index 000000000..84fe41d89
 +
 +		boolean[] itemsFound = new boolean[itemList.size()];
 +
++		// check trinkets
++		if (Options.logTrinkets) {
++			ArrayList<HeapItem> trinkets = getTrinkets();
++			for (int k = 0; k < trinkets.size(); k++) {
++				for (int j = 0; j < itemList.size(); j++) {
++					if (trinkets.get(k).name().toLowerCase().contains(itemList.get(j))) {
++						if (!itemsFound[j]) {
++							itemsFound[j] = true;
++							break;
++						}
++					}
++				}
++			}
++		}
++
 +		for (int i = 0; i < floors; i++) {
 +
 +			Level l = Dungeon.newLevel();
@@ -661,21 +676,6 @@ index 000000000..84fe41d89
 +									itemsFound[j] = true;
 +									break;
 +								}
-+							}
-+						}
-+					}
-+				}
-+			}
-+
-+			// check trinkets
-+			if (Options.logTrinkets) {
-+				ArrayList<HeapItem> trinkets = getTrinkets();
-+				for (int k = 0; k < trinkets.size(); k++) {
-+					for (int j = 0; j < itemList.size(); j++) {
-+						if (trinkets.get(k).name().toLowerCase().contains(itemList.get(j))) {
-+							if (!itemsFound[j]) {
-+								itemsFound[j] = true;
-+								break;
 +							}
 +						}
 +					}
