@@ -22,6 +22,8 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WaterOfAwareness;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.WaterOfHealth;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.ArmoredStatue;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.CrystalMimic;
@@ -60,6 +62,9 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.RegularLevel;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.Room;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.secret.SecretWellRoom;
+import com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special.MagicWellRoom;
 import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 
 import com.watabou.utils.Random;
@@ -212,18 +217,22 @@ public class SeedFinder {
 		Options.startingSeed = DungeonSeed.convertFromText(cfg.getProperty("startingSeed"));
 		Options.infoSpacing = Integer.valueOf(cfg.getProperty("infoSpacing"));
 		Options.spacingChar = cfg.getProperty("spacingChar");
-		if (Options.spacingChar.length() != 1) Options.spacingChar = " ";
+		if (Options.spacingChar.length() != 1)
+			Options.spacingChar = " ";
 
 		// build challenge code from config
 		Options.challenges = 0;
 		if (Options.useChallenges) {
-			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true") ? Challenges.CHAMPION_ENEMIES : 0;
+			Options.challenges += cfg.getProperty("chal.hostileChampions").equals("true") ? Challenges.CHAMPION_ENEMIES
+					: 0;
 			Options.challenges += cfg.getProperty("chal.badderBosses").equals("true") ? Challenges.STRONGER_BOSSES : 0;
 			Options.challenges += cfg.getProperty("chal.onDiet").equals("true") ? Challenges.NO_FOOD : 0;
 			Options.challenges += cfg.getProperty("chal.faithIsMyArmor").equals("true") ? Challenges.NO_ARMOR : 0;
 			Options.challenges += cfg.getProperty("chal.pharmacophobia").equals("true") ? Challenges.NO_HEALING : 0;
 			Options.challenges += cfg.getProperty("chal.barrenLand").equals("true") ? Challenges.NO_HERBALISM : 0;
-			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true") ? Challenges.SWARM_INTELLIGENCE : 0;
+			Options.challenges += cfg.getProperty("chal.swarmIntelligence").equals("true")
+					? Challenges.SWARM_INTELLIGENCE
+					: 0;
 			Options.challenges += cfg.getProperty("chal.intoDarkness").equals("true") ? Challenges.DARKNESS : 0;
 			Options.challenges += cfg.getProperty("chal.forbiddenRunes").equals("true") ? Challenges.NO_SCROLLS : 0;
 		}
@@ -360,7 +369,7 @@ public class SeedFinder {
 				}
 			}
 
-		// sequential mode: start at 0
+			// sequential mode: start at 0
 		} else if (Options.sequentialMode) {
 			for (long i = Options.startingSeed; i < DungeonSeed.TOTAL_SEEDS; i++) {
 				if (testSeed(Long.toString(i), Options.floors)) {
@@ -370,11 +379,12 @@ public class SeedFinder {
 				}
 			}
 
-		// default (random) mode
+			// default (random) mode
 		} else {
 			for (long i = Random.Long(DungeonSeed.TOTAL_SEEDS); i < DungeonSeed.TOTAL_SEEDS; i++) {
 				if (testSeed(Long.toString(i), Options.floors)) {
-					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed), Dungeon.seed);
+					System.out.printf("Found valid seed %s (%d)\n", DungeonSeed.convertToCode(Dungeon.seed),
+							Dungeon.seed);
 					logSeedItems(Long.toString(i), Options.floors);
 				}
 			}
@@ -384,45 +394,60 @@ public class SeedFinder {
 	private ArrayList<String> getRooms() {
 		ArrayList<String> rooms = new ArrayList<String>();
 		for (int k = 0; k < RegularLevel.roomList.size(); k++) {
-			String room = RegularLevel.roomList.get(k).toString()
+			Room room1 = RegularLevel.roomList.get(k);
+			String roomstr = room1.toString()
 					.replace("com.shatteredpixel.shatteredpixeldungeon.levels.rooms.", "");
+
+			if (room1 instanceof MagicWellRoom || room1 instanceof SecretWellRoom) {
+				String wellstr;
+
+				if (room1.generatedWellWater == WaterOfAwareness.class) {
+					wellstr = " (awareness)";
+				} else if (room1.generatedWellWater == WaterOfHealth.class) {
+					wellstr = " (health)";
+				} else {
+					wellstr = " (?)";
+				}
+
+				roomstr += wellstr;
+			}
 
 			String roomType = "standard";
 
 			// remove Java object instance code
-			room = room.replaceAll("@[a-z0-9]{4,}", "");
+			roomstr = roomstr.replaceAll("@[a-z0-9]{4,}", "");
 
 			// turn camel case to normal text
-			room = room.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+			roomstr = roomstr.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
 
-			if (room.contains("special")) {
-				room = room.replace("special.", "");
+			if (roomstr.contains("special")) {
+				roomstr = roomstr.replace("special.", "");
 				roomType = "special";
-			} else if (room.contains("secret")) {
-				room = room.replace("secret.", "");
+			} else if (roomstr.contains("secret")) {
+				roomstr = roomstr.replace("secret.", "");
 				roomType = "secret";
-			} else if (room.contains("entrance")) {
-				room = room.replace("entrance.", "");
-				room = room.replace("standard.", "");
+			} else if (roomstr.contains("entrance")) {
+				roomstr = roomstr.replace("entrance.", "");
+				roomstr = roomstr.replace("standard.", "");
 				roomType = "entrance";
-			} else if (room.contains("exit")) {
-				room = room.replace("exit.", "");
-				room = room.replace("standard.", "");
+			} else if (roomstr.contains("exit")) {
+				roomstr = roomstr.replace("exit.", "");
+				roomstr = roomstr.replace("standard.", "");
 				roomType = "exit";
-			} else if (room.contains("standard")) {
-				room = room.replace("standard.", "");
+			} else if (roomstr.contains("standard")) {
+				roomstr = roomstr.replace("standard.", "");
 				roomType = "standard";
 			}
 
 			String tabstring = "";
 			for (int j = 0; j < Math.max(1,
-					Options.infoSpacing - room.length()); j++) {
+					Options.infoSpacing - roomstr.length()); j++) {
 				tabstring += Options.spacingChar;
 			}
 
-			room += tabstring + roomType;
+			roomstr += tabstring + roomType;
 
-			rooms.add(room);
+			rooms.add(roomstr);
 		}
 
 		Collections.sort(rooms);
@@ -499,15 +524,30 @@ public class SeedFinder {
 
 		boolean[] itemsFound = new boolean[itemList.size()];
 
+		// check trinkets
+		if (Options.logTrinkets) {
+			ArrayList<HeapItem> trinkets = getTrinkets();
+			for (int k = 0; k < trinkets.size(); k++) {
+				for (int j = 0; j < itemList.size(); j++) {
+					if (trinkets.get(k).name().toLowerCase().contains(itemList.get(j))) {
+						if (!itemsFound[j]) {
+							itemsFound[j] = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		for (int i = 0; i < floors; i++) {
 
 			Level l = Dungeon.newLevel();
 
 			// skip boss floors
-			//for some reason this fucks up quest item searching
+			// for some reason this fucks up quest item searching
 
 			// if (Dungeon.depth % 5 == 0) {
-			// 	continue;
+			// continue;
 			// }
 
 			ArrayList<Heap> heaps = new ArrayList<>(l.heaps.valueList());
@@ -524,21 +564,6 @@ public class SeedFinder {
 									itemsFound[j] = true;
 									break;
 								}
-							}
-						}
-					}
-				}
-			}
-
-			// check trinkets
-			if(Options.logTrinkets) {
-				ArrayList<HeapItem> trinkets = getTrinkets();
-				for (int k = 0; k < trinkets.size(); k++) {
-					for (int j = 0; j < itemList.size(); j++) {
-						if (trinkets.get(k).name().toLowerCase().contains(itemList.get(j))) {
-							if (!itemsFound[j]) {
-								itemsFound[j] = true;
-								break;
 							}
 						}
 					}
@@ -574,34 +599,34 @@ public class SeedFinder {
 				}
 			}
 
-			// check quests
-			Item[] questitems = {
-					Ghost.Quest.armor,
-					Ghost.Quest.weapon,
-					Wandmaker.Quest.wand1,
-					Wandmaker.Quest.wand2,
-					Imp.Quest.reward
-			};
+			Dungeon.depth++;
+		}
 
-			if (Ghost.Quest.armor != null) {
-				questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
-				questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
-			}
+		// check quests
+		Item[] questitems = {
+				Ghost.Quest.armor,
+				Ghost.Quest.weapon,
+				Wandmaker.Quest.wand1,
+				Wandmaker.Quest.wand2,
+				Imp.Quest.reward
+		};
 
+		if (Ghost.Quest.armor != null) {
+			questitems[0] = Ghost.Quest.armor.inscribe(Ghost.Quest.glyph);
+			questitems[1] = Ghost.Quest.weapon.enchant(Ghost.Quest.enchant);
+		}
+
+		for (int k = 0; k < 5; k++) {
 			for (int j = 0; j < itemList.size(); j++) {
-				for (int k = 0; k < 5; k++) {
-					if (questitems[k] != null) {
-						if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
-							if (!itemsFound[j]) {
-								itemsFound[j] = true;
-								break;
-							}
+				if (questitems[k] != null) {
+					if (questitems[k].identify().title().toLowerCase().contains(itemList.get(j))) {
+						if (!itemsFound[j]) {
+							itemsFound[j] = true;
+							break;
 						}
 					}
 				}
 			}
-
-			Dungeon.depth++;
 		}
 
 		if (Options.condition == Condition.ANY) {
