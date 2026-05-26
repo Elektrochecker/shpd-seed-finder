@@ -1,30 +1,34 @@
 #!/bin/bash
 
 set -eu
+set -o pipefail
 
 java -version
 
 if [ -d shattered-pixel-dungeon ] ; then
     echo "ERROR: please remove shattered-pixel-dungeon/"
-    rm -rI shattered-pixel-dungeon/
+    exit 1
 fi
 
 if [ -d seed-finder ] ; then
     echo "ERROR: please remove seed-finder/"
-    rm -rI seed-finder/
+    exit 1
 fi
 
 if [ -d seed-finder-git ] ; then
     echo "ERROR: please remove seed-finder-git/"
-    rm -rI seed-finder-git/
+    exit 1
 fi
 
 git clone https://github.com/Elektrochecker/shpd-seed-finder seed-finder-git
 
 git clone https://github.com/00-Evan/shattered-pixel-dungeon
-cp -v seed-finder-git/ shattered-pixel-dungeon/changes.patch
+cp -v seed-finder-git/changes.patch shattered-pixel-dungeon/changes.patch
 
+set +e
 git -C shattered-pixel-dungeon apply changes.patch --reject
+set -e
+
 sed -i "s/com.shatteredpixel.shatteredpixeldungeon/com.elektrochecker.seedfinder/" shattered-pixel-dungeon/build.gradle
 
 asset_files=$(find shattered-pixel-dungeon/core/src/main/assets/ -type f)
@@ -38,7 +42,7 @@ for asset in $asset_files; do
         '.jpg') cp -v "seed-finder-git/assets/empty.jpg" "$asset";;
         '.mp3') cp -v "seed-finder-git/assets/empty.mp3" "$asset";;
         '.ogg') cp -v "seed-finder-git/assets/empty.ogg" "$asset";;
-        *) echo "skipping asset $asset";;
+        *) ;;
     esac
 done
 
