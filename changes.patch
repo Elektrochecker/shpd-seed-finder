@@ -1,6 +1,6 @@
-From 64cf6cd0e99230ef6424dd3b798c06dc8f14b9b6 Mon Sep 17 00:00:00 2001
+From 041564f9dab0004486d66d1289111a6fc1051a07 Mon Sep 17 00:00:00 2001
 From: Timon Lilje <timon.lilje@gmail.com>
-Date: Thu, 4 Dec 2025 22:43:57 +0100
+Date: Fri, 11 Sep 2026 10:58:42 +0200
 Subject: [PATCH] seedfinder
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH] seedfinder
  build.gradle                                  |   2 +-
  .../shatteredpixeldungeon/Badges.java         |   2 +-
  .../shatteredpixeldungeon/SPDSettings.java    |   6 +-
- .../shatteredpixeldungeon/SeedFinder.java     | 920 ++++++++++++++++++
+ .../shatteredpixeldungeon/SeedFinder.java     | 921 ++++++++++++++++++
  .../ShatteredPixelDungeon.java                |  11 +-
  .../actors/mobs/ArmoredStatue.java            |   2 +-
  .../actors/mobs/Statue.java                   |   2 +-
@@ -30,7 +30,7 @@ Subject: [PATCH] seedfinder
  .../levels/rooms/special/SacrificeRoom.java   |   1 +
  .../messages/Languages.java                   |   4 -
  .../desktop/DesktopLauncher.java              |   6 +
- 26 files changed, 996 insertions(+), 30 deletions(-)
+ 26 files changed, 997 insertions(+), 30 deletions(-)
  create mode 100644 core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 
 diff --git a/.gitignore b/.gitignore
@@ -46,7 +46,7 @@ index 5b124b5b1..ba57d171c 100644
 +*.patch
 +*.rej
 diff --git a/SPD-classes/src/main/java/com/watabou/noosa/Game.java b/SPD-classes/src/main/java/com/watabou/noosa/Game.java
-index 0f73ea0e3..6f41de63a 100644
+index 40183d88a..c01357ae3 100644
 --- a/SPD-classes/src/main/java/com/watabou/noosa/Game.java
 +++ b/SPD-classes/src/main/java/com/watabou/noosa/Game.java
 @@ -54,6 +54,7 @@ public class Game implements ApplicationListener {
@@ -58,7 +58,7 @@ index 0f73ea0e3..6f41de63a 100644
  	
  	// Current scene
 diff --git a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
-index 952e00a56..b85b588b6 100644
+index 56b5d504c..cfd9b60b5 100644
 --- a/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
 +++ b/SPD-classes/src/main/java/com/watabou/utils/DeviceCompat.java
 @@ -52,7 +52,7 @@ public class DeviceCompat {
@@ -71,7 +71,7 @@ index 952e00a56..b85b588b6 100644
  	
  	public static void log( String tag, String message ){
 diff --git a/build.gradle b/build.gradle
-index 8ab656350..b8f0b8924 100644
+index 7d589b486..b7f1bd574 100644
 --- a/build.gradle
 +++ b/build.gradle
 @@ -12,7 +12,7 @@ allprojects {
@@ -81,10 +81,10 @@ index 8ab656350..b8f0b8924 100644
 -        appPackageName = 'com.shatteredpixel.shatteredpixeldungeon'
 +        appPackageName = 'com.elektrochecker.seedfinder'
  
-         appVersionCode = 883
-         appVersionName = '3.3.0'
+         //Full releases gets +2 on version code, needed for an F-Droid quirk
+         appVersionCode = 912
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/Badges.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/Badges.java
-index 7e6c9655f..fc66d763f 100644
+index c6007018f..323cb3630 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/Badges.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/Badges.java
 @@ -1185,7 +1185,7 @@ public class Badges {
@@ -97,10 +97,10 @@ index 7e6c9655f..fc66d763f 100644
  			PixelScene.showBadge( badge );
  		}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
-index 16f7221f2..e85b5559b 100644
+index 40a1b0696..a85535f54 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SPDSettings.java
-@@ -232,7 +232,7 @@ public class SPDSettings extends GameSettings {
+@@ -233,7 +233,7 @@ public class SPDSettings extends GameSettings {
  	}
  	
  	public static boolean intro() {
@@ -109,16 +109,16 @@ index 16f7221f2..e85b5559b 100644
  	}
  	
  	public static void lastClass( int value ) {
-@@ -318,7 +318,7 @@ public class SPDSettings extends GameSettings {
+@@ -326,7 +326,7 @@ public class SPDSettings extends GameSettings {
+ 		put(KEY_NEWS, value);
  	}
+ 
+-	public static boolean newsDefault = true;
++	public static boolean newsDefault = false;
  
  	public static boolean news(){
--		return getBoolean(KEY_NEWS, true);
-+		return getBoolean(KEY_NEWS, false);
- 	}
- 
- 	public static void updates(boolean value){
-@@ -326,7 +326,7 @@ public class SPDSettings extends GameSettings {
+ 		return getBoolean(KEY_NEWS, newsDefault);
+@@ -337,7 +337,7 @@ public class SPDSettings extends GameSettings {
  	}
  
  	public static boolean updates(){
@@ -129,10 +129,10 @@ index 16f7221f2..e85b5559b 100644
  	public static void betas(boolean value){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
 new file mode 100644
-index 000000000..d8991e39b
+index 000000000..99a125ef6
 --- /dev/null
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/SeedFinder.java
-@@ -0,0 +1,920 @@
+@@ -0,0 +1,921 @@
 +package com.shatteredpixel.shatteredpixeldungeon;
 +
 +import java.io.File;
@@ -973,13 +973,14 @@ index 000000000..d8991e39b
 +				Blacksmith.Quest.type = 0;
 +			}
 +
-+			if (Imp.Quest.reward != null) {
-+				ArrayList<Item> rewards = new ArrayList<>();
-+				rewards.add(Imp.Quest.reward.identify());
-+				Imp.Quest.complete();
++			// TODO new imp quest
++			// if (Imp.Quest.reward != null) {
++			// 	ArrayList<Item> rewards = new ArrayList<>();
++			// 	rewards.add(Imp.Quest.reward.identify());
++			// 	Imp.Quest.complete();
 +
-+				addTextQuest("Imp quest reward", rewards, builder);
-+			}
++			// 	addTextQuest("Imp quest reward", rewards, builder);
++			// }
 +
 +			heaps.addAll(getMobDrops(l));
 +
@@ -1054,10 +1055,10 @@ index 000000000..d8991e39b
 +	}
 +}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
-index 8c09d4dd1..c144f83f7 100644
+index 72f394ff2..1e77722af 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ShatteredPixelDungeon.java
-@@ -57,17 +57,8 @@ public class ShatteredPixelDungeon extends Game {
+@@ -58,17 +58,8 @@ public class ShatteredPixelDungeon extends Game {
  	@Override
  	public void create() {
  		super.create();
@@ -1077,10 +1078,10 @@ index 8c09d4dd1..c144f83f7 100644
  
  	@Override
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
-index f6922648b..ef1549961 100644
+index 475dd803b..4c1b675de 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/ArmoredStatue.java
-@@ -37,7 +37,7 @@ public class ArmoredStatue extends Statue {
+@@ -38,7 +38,7 @@ public class ArmoredStatue extends Statue {
  		spriteClass = StatueSprite.class;
  	}
  
@@ -1090,10 +1091,10 @@ index f6922648b..ef1549961 100644
  	public ArmoredStatue(){
  		super();
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
-index fbedf8f3a..4e2c33e11 100644
+index e7f8b969e..262839a27 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Statue.java
-@@ -48,7 +48,7 @@ public class Statue extends Mob {
+@@ -49,7 +49,7 @@ public class Statue extends Mob {
  		properties.add(Property.INORGANIC);
  	}
  	
@@ -1103,7 +1104,7 @@ index fbedf8f3a..4e2c33e11 100644
  	public boolean levelGenStatue = true;
  	
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
-index 24657d17d..71f7fec96 100644
+index 2b48973d0..36da96398 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Blacksmith.java
 @@ -199,7 +199,7 @@ public class Blacksmith extends NPC {
@@ -1116,7 +1117,7 @@ index 24657d17d..71f7fec96 100644
  		public static final int GNOLL = 2;
  		public static final int FUNGI = 3; //The fungi quest is not implemented, only exists partially in code
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
-index 6d15aecba..32723d08b 100644
+index 398fbbea6..3714d8995 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/npcs/Wandmaker.java
 @@ -216,7 +216,7 @@ public class Wandmaker extends NPC {
@@ -1129,7 +1130,7 @@ index 6d15aecba..32723d08b 100644
  		// 2 = elemental embers quest
  		// 3 = rotberry quest
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
-index df03d86bf..74c2ddbdb 100644
+index ae2b22009..79e6c7439 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Heap.java
 @@ -67,7 +67,12 @@ public class Heap implements Bundlable {
@@ -1146,7 +1147,7 @@ index df03d86bf..74c2ddbdb 100644
  	}
  	public Type type = Type.HEAP;
  	
-@@ -386,8 +391,18 @@ public class Heap implements Bundlable {
+@@ -389,8 +394,18 @@ public class Heap implements Bundlable {
  				return Messages.get(this, "skeleton");
  			case REMAINS:
  				return Messages.get(this, "remains");
@@ -1167,10 +1168,10 @@ index df03d86bf..74c2ddbdb 100644
  	}
  
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
-index 7a37e191c..03f84c4b4 100644
+index 36efda17a..b3a3949c9 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Item.java
-@@ -497,6 +497,10 @@ public class Item implements Bundlable {
+@@ -499,6 +499,10 @@ public class Item implements Bundlable {
  	public String name() {
  		return trueName();
  	}
@@ -1182,10 +1183,10 @@ index 7a37e191c..03f84c4b4 100644
  	public final String trueName() {
  		return Messages.get(this, "name");
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
-index 56dbfad57..088832d14 100644
+index c75a26d7b..84e3c220c 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/potions/Potion.java
-@@ -378,6 +378,11 @@ public class Potion extends Item {
+@@ -379,6 +379,11 @@ public class Potion extends Item {
  		return isKnown() ? super.name() : Messages.get(this, color);
  	}
  
@@ -1198,7 +1199,7 @@ index 56dbfad57..088832d14 100644
  	public String info() {
  		//skip custom notes if anonymized and un-Ided
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/rings/Ring.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/rings/Ring.java
-index e404adaac..bf98c1ee4 100644
+index 4c11fa6a9..f09b4d0ce 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/rings/Ring.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/rings/Ring.java
 @@ -177,6 +177,11 @@ public class Ring extends KindofMisc {
@@ -1214,7 +1215,7 @@ index e404adaac..bf98c1ee4 100644
  	@Override
  	public String info(){
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
-index 56e31affb..0e5b5833d 100644
+index 8124559f0..34eff6462 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/scrolls/Scroll.java
 @@ -241,6 +241,11 @@ public abstract class Scroll extends Item {
@@ -1230,7 +1231,7 @@ index 56e31affb..0e5b5833d 100644
  	public String info() {
  		//skip custom notes if anonymized and un-Ided
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
-index a976f675a..124d2f34f 100644
+index e8596860f..6099ff05f 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/trinkets/TrinketCatalyst.java
 @@ -82,7 +82,7 @@ public class TrinketCatalyst extends Item {
@@ -1252,10 +1253,10 @@ index a976f675a..124d2f34f 100644
  		public WndTrinket( TrinketCatalyst cata ){
  
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
-index 34e0a8e9e..d5cedf0e3 100644
+index e3621b609..c0718c20a 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/Level.java
-@@ -212,6 +212,8 @@ public abstract class Level implements Bundlable {
+@@ -215,6 +215,8 @@ public abstract class Level implements Bundlable {
  	private static final String BLOBS		= "blobs";
  	private static final String FEELING		= "feeling";
  
@@ -1263,9 +1264,9 @@ index 34e0a8e9e..d5cedf0e3 100644
 +
  	public void create() {
  
- 		Random.pushGenerator( Dungeon.seedCurDepth() );
+ 		TargetedCell.cells.clear();
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/RegularLevel.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/RegularLevel.java
-index a3013b3f3..0c6b1aba2 100644
+index a9d4eb36c..e9be0c859 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/RegularLevel.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/RegularLevel.java
 @@ -100,6 +100,8 @@ public abstract class RegularLevel extends Level {
@@ -1286,7 +1287,7 @@ index a3013b3f3..0c6b1aba2 100644
  		
  		do {
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
-index ad061cf69..0c4172f50 100644
+index abf6dd15b..72ed68ff5 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/Room.java
 @@ -21,6 +21,7 @@
@@ -1309,7 +1310,7 @@ index ad061cf69..0c4172f50 100644
 +
 +
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
-index 357270a60..32629b590 100644
+index daaa5c634..bd42a33fb 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretWellRoom.java
 @@ -63,6 +63,8 @@ public class SecretWellRoom extends SecretRoom {
@@ -1322,7 +1323,7 @@ index 357270a60..32629b590 100644
  		WellWater.seed(well.x + level.width() * well.y, 1, waterClass, level);
  		
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
-index 2439ebbb9..b9e99ebc5 100644
+index c5637b61d..589ce2593 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/MagicWellRoom.java
 @@ -52,7 +52,8 @@ public class MagicWellRoom extends SpecialRoom {
@@ -1336,7 +1337,7 @@ index 2439ebbb9..b9e99ebc5 100644
  		WellWater.seed(c.x + level.width() * c.y, 1, waterClass, level);
  		
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
-index 51eadeb71..12e94b7f6 100644
+index 396a317ca..2f12a68f0 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/levels/rooms/special/SacrificeRoom.java
 @@ -102,6 +102,7 @@ public class SacrificeRoom extends SpecialRoom {
@@ -1348,7 +1349,7 @@ index 51eadeb71..12e94b7f6 100644
  		return prize;
  	}
 diff --git a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
-index 71bae0ab6..5d5888c86 100644
+index 25866ba4c..c8a155394 100644
 --- a/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 +++ b/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java
 @@ -104,10 +104,6 @@ public enum Languages {
@@ -1363,7 +1364,7 @@ index 71bae0ab6..5d5888c86 100644
  	}
  
 diff --git a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
-index b5c7c8f37..109d9a486 100644
+index 62c5e74d2..ec68ca902 100644
 --- a/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 +++ b/desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java
 @@ -39,6 +39,8 @@ import com.watabou.noosa.Game;
@@ -1394,5 +1395,5 @@ index b5c7c8f37..109d9a486 100644
  	}
  }
 -- 
-2.52.0
+2.55.0
 
